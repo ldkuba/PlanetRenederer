@@ -1,9 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEditor;
-using Unity.VisualScripting;
-
 [CustomEditor(typeof(CelestialObject))]
 public class CelestialObjectEditor : Editor {
 
@@ -18,7 +14,7 @@ public class CelestialObjectEditor : Editor {
         CO_serialized = new SerializedObject(CO);
     }
 
-    protected void draw_settings_editor(ref Editor editor, Object settings, System.Action on_settings_updated) {
+    protected void draw_settings_editor(ref Editor editor, Object settings, System.Action on_resolution_updated, System.Action on_settings_updated) {
         if (settings == null) return;
 
         int min_resolution = 1;
@@ -33,14 +29,22 @@ public class CelestialObjectEditor : Editor {
                 max_resolution = 1000;
                 break;
         }
-        EditorGUILayout.IntSlider(CO_serialized.FindProperty("Resolution"), min_resolution, max_resolution);
+
+        SerializedProperty resolution_property = CO_serialized.FindProperty("Resolution");
+        EditorGUILayout.IntSlider(resolution_property, min_resolution, max_resolution);
+
+        if (resolution_property.intValue != CO.Resolution) {
+            on_resolution_updated?.Invoke();
+        }
 
         using (var check = new EditorGUI.ChangeCheckScope()) {
             EditorGUILayout.InspectorTitlebar(true, settings);
             CreateCachedEditor(settings, null, ref editor);
             editor.OnInspectorGUI();
 
-            if (check.changed) on_settings_updated?.Invoke();
+            if (check.changed) {
+                on_settings_updated?.Invoke();
+            }
         }
 
         CO_serialized.ApplyModifiedProperties();
@@ -54,6 +58,6 @@ public class CelestialObjectEditor : Editor {
         if (CO_serialized == null)
             CO_serialized = new SerializedObject(CO);
 
-        draw_settings_editor(ref shape_editor, CO.ShapeSettings, CO.OnShapeSettingsUpdated);
+        draw_settings_editor(ref shape_editor, CO.ShapeSettings, CO.OnResolutionChanged, CO.OnShapeSettingsUpdated);
     }
 }

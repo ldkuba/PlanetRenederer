@@ -15,7 +15,7 @@ public class CubeSphereMesh {
         // Elapsed = 00:00:03.0389022 // for side
         // Elapsed = 00:00:02.9811514 // side for
         // Elapsed = 00:00:00.3820955 // Limited (side for)
-        UnityEngine.Debug.Log("Elapsed = " + sw.Elapsed);
+        // UnityEngine.Debug.Log("Elapsed = " + sw.Elapsed);
 
         return cube_sphere;
     }

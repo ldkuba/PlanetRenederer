@@ -8,6 +8,7 @@ public class Planet : CelestialObject {
     [ContextMenu("generate")]
     public void generate_planet() {
         initialize();
+        OnResolutionChanged();
         OnShapeSettingsUpdated();
     }
 }
