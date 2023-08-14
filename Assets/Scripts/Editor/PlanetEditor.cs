@@ -6,9 +6,6 @@ using UnityEditor;
 [CustomEditor(typeof(Planet))]
 public class PlanetEditor : CelestialObjectEditor {
 
-    // sub-editors
-    Editor color_editor;
-
     private void OnEnable() {
         CO = (Planet) target;
     }
@@ -20,7 +17,5 @@ public class PlanetEditor : CelestialObjectEditor {
             base.OnInspectorGUI();
             if (check.changed) planet.generate_planet();
         }
-
-        draw_settings_editor(ref color_editor, planet.ColorSettings, planet.OnColorSettingsUpdated);
     }
 }

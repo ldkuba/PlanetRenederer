@@ -98,8 +98,6 @@ public class CelestialObjectGenerator : MonoBehaviour {
         }
         planetS.ShapeSettings.radius = ObjectRadius;
         planetS.ShapeSettings.randomize_seed();
-        // color
-        planetS.ColorSettings = null;
         // tag
         planetS.gameObject.tag = "Surface";
         // initialize
