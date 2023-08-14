@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fa73833c3d7c8b42bf3a816259a0b5c, type: 3}
+  m_Name: SphereSetting
+  m_EditorClassIdentifier: 
+  noise_compute_shader: {fileID: 7200000, guid: 1e629094506fbd842a80ea93ce2c1ece, type: 3}
+  radius: 1
+  continent_ratio: 1
+  ocean_depth: 0.47
+  flatness: 0.397
+  continent_noise:
+    enable: 0
+    number_of_layers: 0
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+  flatness_noise:
+    enable: 0
+    number_of_layers: 0
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+  general_noise:
+    enable: 1
+    number_of_layers: 2
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+  mountains_noise:
+    enable: 0
+    number_of_layers: 0
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+    power: 0
+    gain: 0
+  underwater_mountains_noise:
+    enable: 0
+    number_of_layers: 0
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+    power: 0
+    gain: 0
+    offset: 0
+  crater_noise:
+    enable: 0
+    number_of_layers: 0
+    amplitude_fading: 0
+    base_frequency: 0
+    frequency_multiplier: 0
+    strength: 0
+    base_height: 0
+    seed: {x: 0, y: 0, z: 0}
+    depth: 0
+    radius: 0
+    slope: 0
+    central_elevation_height: 0
+    central_elevation_width: 0
+    outside_slope: 0
+    jitter: 0
