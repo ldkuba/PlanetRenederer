@@ -30,10 +30,11 @@ public class CelestialObjectEditor : Editor {
                 break;
         }
 
-        SerializedProperty resolution_property = CO_serialized.FindProperty("Resolution");
+        SerializedProperty resolution_property = CO_serialized.FindProperty("resolution");
         EditorGUILayout.IntSlider(resolution_property, min_resolution, max_resolution);
 
-        if (resolution_property.intValue != CO.Resolution) {
+        if (resolution_property.intValue != CO.resolution) {
+            CO.resolution = resolution_property.intValue;
             on_resolution_updated?.Invoke();
         }
 
@@ -55,9 +56,11 @@ public class CelestialObjectEditor : Editor {
             base.OnInspectorGUI();
         }
 
+        if (CO == null)
+            CO = (CelestialObject) target;
         if (CO_serialized == null)
             CO_serialized = new SerializedObject(CO);
 
-        draw_settings_editor(ref shape_editor, CO.ShapeSettings, CO.OnResolutionChanged, CO.OnShapeSettingsUpdated);
+        draw_settings_editor(ref shape_editor, CO.shapeSettings, CO.OnResolutionChanged, CO.OnShapeSettingsUpdated);
     }
 }

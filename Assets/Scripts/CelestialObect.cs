@@ -4,17 +4,23 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class CelestialObject : MonoBehaviour {
-    // components
+    // Components
+    public ShapeSettings shapeSettings;
     [SerializeField, HideInInspector]
-    protected MeshFilter MeshF;
-    public ShapeSettings ShapeSettings;
+    protected MeshFilter mesh_filter;
 
-    // settings
+    // Settings
     [HideInInspector]
     public SphereMeshGenerator.SphereType SphereType = SphereMeshGenerator.SphereType.Cube;
     [HideInInspector]
-    public int Resolution = 100;
-    public Material Material;
+    public int resolution = 100;
+    public Material material;
+
+    // Vertex buffers
+    private ComputeBuffer initial_pos_buffer;
+    private ComputeBuffer position_buffer;
+    private ComputeBuffer normal_buffer;
+    private ComputeBuffer uv_buffer;
 
     // Public Methods
     [ContextMenu("initialize")]
@@ -24,6 +30,7 @@ public abstract class CelestialObject : MonoBehaviour {
 
     public void OnResolutionChanged() {
         generate_mesh();
+        apply_noise();
     }
 
     public void OnShapeSettingsUpdated() {
@@ -31,7 +38,7 @@ public abstract class CelestialObject : MonoBehaviour {
     }
 
     public Vector3[] get_vertices() {
-        return MeshF.sharedMesh.vertices;
+        return mesh_filter.sharedMesh.vertices;
     }
 
     // Private methods
@@ -44,10 +51,10 @@ public abstract class CelestialObject : MonoBehaviour {
         GameObject mesh_obj = new("Mesh");
         mesh_obj.transform.parent = transform;
         mesh_obj.transform.localPosition = Vector3.zero;
-        mesh_obj.AddComponent<MeshRenderer>().sharedMaterial = Material;
+        mesh_obj.AddComponent<MeshRenderer>().sharedMaterial = material;
 
-        MeshF = mesh_obj.AddComponent<MeshFilter>();
-        MeshF.sharedMesh = new() {
+        mesh_filter = mesh_obj.AddComponent<MeshFilter>();
+        mesh_filter.sharedMesh = new() {
             indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
         };
 
@@ -55,18 +62,56 @@ public abstract class CelestialObject : MonoBehaviour {
     }
 
     private void generate_mesh() {
-        // Generate unity sphere
-        SphereMeshGenerator.construct_mesh(MeshF.sharedMesh, (uint) Resolution, SphereType);
+        // Generate unit sphere
+        SphereMeshGenerator.construct_mesh(mesh_filter.sharedMesh, (uint) resolution, SphereType);
+        mesh_filter.sharedMesh.RecalculateNormals();
+
+        // Get mesh data
+        var positions = mesh_filter.sharedMesh.vertices;
+        var normals = mesh_filter.sharedMesh.normals;
+        var uvs = mesh_filter.sharedMesh.uv;
+        var vertex_count = positions.Length;
+
+        // Keep reference to old buffers
+        var old_initial_pos_buffer = initial_pos_buffer;
+        var old_position_buffer = position_buffer;
+        var old_normal_buffer = normal_buffer;
+        var old_uv_buffer = uv_buffer;
+
+        // Initialize buffers
+        initial_pos_buffer = new(vertex_count, 3 * sizeof(float));
+        position_buffer = new(vertex_count, 3 * sizeof(float));
+        normal_buffer = new(vertex_count, 3 * sizeof(float));
+        uv_buffer = new(vertex_count, 2 * sizeof(float));
+
+        // Set initial buffer data
+        initial_pos_buffer.SetData(positions, 0, 0, vertex_count);
+        position_buffer.SetData(positions, 0, 0, vertex_count);
+        normal_buffer.SetData(normals, 0, 0, vertex_count);
+        uv_buffer.SetData(uvs, 0, 0, vertex_count);
+
+        // Initialize shape noise settings
+        shapeSettings.initialize(initial_pos_buffer, position_buffer, vertex_count);
+
+        // Set material buffers
+        material.SetBuffer("position_buffer", position_buffer);
+        material.SetBuffer("normal_buffer", normal_buffer);
+        material.SetBuffer("uv_buffer", uv_buffer);
+
+        // Release old buffers if necessary
+        old_initial_pos_buffer?.Release();
+        old_position_buffer?.Release();
+        old_normal_buffer?.Release();
+        old_uv_buffer?.Release();
     }
 
     private void apply_noise() {
-        if (ShapeSettings == null) {
+        if (shapeSettings == null) {
             Debug.Log("Shape settings not set!");
             return;
         }
 
-        var vertices_deformed = ShapeSettings.apply_noise(MeshF.sharedMesh.vertices);
-        MeshF.sharedMesh.vertices = vertices_deformed;
-        MeshF.sharedMesh.RecalculateNormals();
+        shapeSettings.apply_noise();
+        // MeshF.sharedMesh.RecalculateNormals();
     }
 }

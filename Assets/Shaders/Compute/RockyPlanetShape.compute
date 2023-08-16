@@ -5,13 +5,14 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel PlanetShapeCompute
 
-// Height information
-RWStructuredBuffer<float> heights;
+// Vertex information
 StructuredBuffer<float3> vertices;
+RWStructuredBuffer<float3> out_vertices;
 uint num_of_vertices;
-float radius;
 
-// settings
+// Settings
+float radius;
+// Shape Settings
 int4 enabled[2];
 float4 noise_settings_continent_shape[3];
 float4 noise_settings_both[3];
@@ -19,7 +20,7 @@ float4 noise_settings_mountains[3];
 float4 noise_settings_ocean_mountains[3];
 float4 noise_settings_flatness[3];
 float4 noise_settings_crater[4];
-
+// Surface specific
 float continent_base;
 float ocean_depth;
 float flatness_ratio;
@@ -61,5 +62,8 @@ void PlanetShapeCompute(uint id : SV_DispatchThreadID) {
 	// bumps
 	height += abs(fractal_noise(vertices[id], noise_settings_both)) * general_noise_enabled;
 	
-	heights[id] = radius * (1 + 0.5 * height);
+    // Final height
+    height = radius * (1 + 0.5 * height);
+
+	out_vertices[id] = vertices[id] * height;
 }

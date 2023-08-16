@@ -15,11 +15,11 @@ public class OceanSphere : CelestialObject {
         Color[] colors = new Color[vertices.Length];
 
         for (int i = 0; i < vertices.Length; i++) {
-            float zone = ShapeSettings.radius - vertices[i].magnitude;
+            float zone = shapeSettings.radius - vertices[i].magnitude;
             zone /= max_depth;
             colors[i] = new Color(Mathf.Clamp01(zone), 0, 0);
         }
 
-        MeshF.sharedMesh.colors = colors;
+        mesh_filter.sharedMesh.colors = colors;
     }
 }

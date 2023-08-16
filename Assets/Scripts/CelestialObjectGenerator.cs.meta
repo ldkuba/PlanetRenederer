@@ -9,7 +9,7 @@ MonoImporter:
   - DefaultRockyPlanetDryShapeSettings: {fileID: 11400000, guid: e03bd3c990a798d44b46124d8546f710, type: 2}
   - DefaultRockyPlanetWetShapeSettings: {instanceID: 0}
   - DefaultOceanShapeSettings: {instanceID: 0}
-  - SurfaceMaterial: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
+  - SurfaceMaterial: {fileID: 2100000, guid: f38dc9595a915aa4793fe196985cb35b, type: 2}
   - OceanMaterial: {instanceID: 0}
   - StarMaterial: {instanceID: 0}
   executionOrder: 0

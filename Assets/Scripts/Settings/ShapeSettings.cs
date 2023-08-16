@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,25 +8,25 @@ public class ShapeSettings : ScriptableObject {
     public class NoiseSettings {
         public bool enable;
         [Range(1, 10)]
-        public int number_of_layers = 1;
+        public int numberOfLayers = 1;
         [Min(0f)]
-        public float amplitude_fading;
+        public float amplitudeFading;
         [Min(0f)]
-        public float base_frequency = 1f;
+        public float baseFrequency = 1f;
         [Min(0f)]
-        public float frequency_multiplier;
+        public float frequencyMultiplier;
         public float strength = 1f;
-        public float base_height;
+        public float baseHeight;
         public Vector3 seed;
 
         public NoiseSettings(NoiseSettings settings) {
             enable = settings.enable;
-            number_of_layers = settings.number_of_layers;
-            amplitude_fading = settings.amplitude_fading;
-            base_frequency = settings.base_frequency;
-            frequency_multiplier = settings.frequency_multiplier;
+            numberOfLayers = settings.numberOfLayers;
+            amplitudeFading = settings.amplitudeFading;
+            baseFrequency = settings.baseFrequency;
+            frequencyMultiplier = settings.frequencyMultiplier;
             strength = settings.strength;
-            base_height = settings.base_height;
+            baseHeight = settings.baseHeight;
             seed.x = settings.seed.x;
             seed.y = settings.seed.y;
             seed.z = settings.seed.z;
@@ -74,38 +75,75 @@ public class ShapeSettings : ScriptableObject {
         [Min(1)]
         public int slope = 12;
         [Min(0f)]
-        public float central_elevation_height;
+        public float centralElevationHeight;
         [Min(0f)]
-        public float central_elevation_width;
+        public float centralElevationWidth;
         [Min(0f)]
-        public float outside_slope;
+        public float outsideSlope;
         public float jitter;
 
         public CraterNoiseSettings(CraterNoiseSettings settings) : base(settings) {
             depth = settings.depth;
             radius = settings.radius;
             slope = settings.slope;
-            central_elevation_height = settings.central_elevation_height;
-            central_elevation_width = settings.central_elevation_width;
-            outside_slope = settings.outside_slope;
+            centralElevationHeight = settings.centralElevationHeight;
+            centralElevationWidth = settings.centralElevationWidth;
+            outsideSlope = settings.outsideSlope;
             jitter = settings.jitter;
         }
     }
 
-    public ComputeShader noise_compute_shader;
-
+    // Shape settings
     [Min(0.5f)]
     public float radius = 1f;
 
+    // Noise shape compute
+    public ComputeShader shapeComputeShader;
+    protected int shader_kernel_id;
+    protected uint thread_x;
+    protected uint thread_y;
+    protected uint thread_z;
+
     public virtual void set_settings(ShapeSettings settings) {
-        noise_compute_shader = settings.noise_compute_shader;
+        shapeComputeShader = settings.shapeComputeShader;
         radius = settings.radius;
     }
     public virtual void randomize_seed() { }
-    public virtual Vector3[] apply_noise(Vector3[] vertices_in) {
-        Vector3[] vertices = (Vector3[]) vertices_in.Clone();
-        for (int i = 0; i < vertices_in.Length; i++)
-            vertices[i] *= radius;
-        return vertices;
+
+    public virtual void initialize(ComputeBuffer initial_position_buffer, ComputeBuffer position_buffer, int vertex_count) {
+        if (shapeComputeShader == null) {
+            Debug.LogError(error_compute_not_set);
+            return;
+        }
+        if (initial_position_buffer.count < position_buffer.count) {
+            Debug.LogError(error_position_buffer_size);
+            return;
+        }
+
+        // Here we will setup compute shader
+        // First we need to find kernel
+        shader_kernel_id = shapeComputeShader.FindKernel("PlanetShapeCompute");
+
+        // Compute required thread count
+        shapeComputeShader.GetKernelThreadGroupSizes(shader_kernel_id, out thread_x, out thread_y, out thread_z);
+        thread_x = (uint) Mathf.CeilToInt(1.0f * vertex_count / thread_x);
+
+        // Set buffers
+        shapeComputeShader.SetBuffer(shader_kernel_id, "vertices", initial_position_buffer);
+        shapeComputeShader.SetBuffer(shader_kernel_id, "out_vertices", position_buffer);
+
+        // Set number of vertices
+        shapeComputeShader.SetInt("num_of_vertices", vertex_count);
     }
+
+    public virtual void apply_noise() {
+        // Send radius
+        shapeComputeShader.SetFloat("radius", radius);
+
+        // run
+        shapeComputeShader.Dispatch(shader_kernel_id, (int) thread_x, (int) thread_y, (int) thread_z);
+    }
+
+    protected const String error_compute_not_set = "Compute shader not set.";
+    protected const String error_position_buffer_size = "Initial position buffer incompatible with the current one.";
 }

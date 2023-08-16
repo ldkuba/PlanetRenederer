@@ -46,9 +46,9 @@ public class CelestialObjectGenerator : MonoBehaviour {
             StarSphere starS = surface.AddComponent<StarSphere>();
             // resolution
             starS.SphereType = SphereType;
-            starS.Resolution = SphereResolution;
+            starS.resolution = SphereResolution;
             // material
-            starS.Material = StarMaterial;
+            starS.material = StarMaterial;
             // radius
             starS.Radius = ObjectRadius;
             starS.OnRadiusUpdate();
@@ -74,30 +74,30 @@ public class CelestialObjectGenerator : MonoBehaviour {
         Planet planetS = surface.AddComponent<Planet>();
         // resolution
         planetS.SphereType = SphereType;
-        planetS.Resolution = SphereResolution;
+        planetS.resolution = SphereResolution;
         // material
-        planetS.Material = SurfaceMaterial;
+        planetS.material = SurfaceMaterial;
         // shape
         switch (ObjectType) {
             case COType.Asteroid:
-                planetS.ShapeSettings = ScriptableObject.CreateInstance<AsteroidShapeSettings>();
-                planetS.ShapeSettings.set_settings(DefaultAsteroidShapeSettings);
+                planetS.shapeSettings = ScriptableObject.CreateInstance<AsteroidShapeSettings>();
+                planetS.shapeSettings.set_settings(DefaultAsteroidShapeSettings);
                 break;
             case COType.Moon:
-                planetS.ShapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.ShapeSettings.set_settings(DefaultMoonShapeSettings);
+                planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
+                planetS.shapeSettings.set_settings(DefaultMoonShapeSettings);
                 break;
             case COType.RockyDryPlanet:
-                planetS.ShapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.ShapeSettings.set_settings(DefaultRockyPlanetDryShapeSettings);
+                planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
+                planetS.shapeSettings.set_settings(DefaultRockyPlanetDryShapeSettings);
                 break;
             case COType.RockyWetPlanet:
-                planetS.ShapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.ShapeSettings.set_settings(DefaultRockyPlanetWetShapeSettings);
+                planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
+                planetS.shapeSettings.set_settings(DefaultRockyPlanetWetShapeSettings);
                 break;
         }
-        planetS.ShapeSettings.radius = ObjectRadius;
-        planetS.ShapeSettings.randomize_seed();
+        planetS.shapeSettings.radius = ObjectRadius;
+        planetS.shapeSettings.randomize_seed();
         // tag
         planetS.gameObject.tag = "Surface";
         // initialize
@@ -110,14 +110,14 @@ public class CelestialObjectGenerator : MonoBehaviour {
             OceanSphere oceanS = ocean.AddComponent<OceanSphere>();
             // resolution
             oceanS.SphereType = SphereType;
-            oceanS.Resolution = SphereResolution;
+            oceanS.resolution = SphereResolution;
             // material
-            oceanS.Material = OceanMaterial;
+            oceanS.material = OceanMaterial;
             // shape
-            oceanS.ShapeSettings = ScriptableObject.CreateInstance<OceanShapeSettings>();
-            oceanS.ShapeSettings.set_settings(DefaultOceanShapeSettings);
-            oceanS.ShapeSettings.radius = ObjectRadius;
-            oceanS.ShapeSettings.randomize_seed();
+            oceanS.shapeSettings = ScriptableObject.CreateInstance<OceanShapeSettings>();
+            oceanS.shapeSettings.set_settings(DefaultOceanShapeSettings);
+            oceanS.shapeSettings.radius = ObjectRadius;
+            oceanS.shapeSettings.randomize_seed();
             // tag
             oceanS.gameObject.tag = "Ocean";
             // initialize
