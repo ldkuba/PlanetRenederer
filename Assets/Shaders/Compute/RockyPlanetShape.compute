@@ -8,6 +8,7 @@
 // Vertex information
 StructuredBuffer<float3> vertices;
 RWStructuredBuffer<float3> out_vertices;
+RWStructuredBuffer<float3> normals;
 uint num_of_vertices;
 
 // Settings
@@ -25,45 +26,134 @@ float continent_base;
 float ocean_depth;
 float flatness_ratio;
 
-[numthreads(256, 1, 1)]
-void PlanetShapeCompute(uint id : SV_DispatchThreadID) {
-	if (id >= num_of_vertices) { return; }
+// Helper functions
+float3 apply_noise(float3 position);
+float3 compute_normal(float3 up, float3 p0);
 
-	// enables ==for readability==
-	int continents_enabled =	  enabled[0].x;
-	int general_noise_enabled =	  enabled[0].y;
-	int mountains_enabled =		  enabled[0].z;
-	int ocean_mountains_enabled = enabled[0].w;
-	int flatness_enabled =        enabled[1].x;
-	int craters_enabled = 		  enabled[1].y;
+// Kernels
+[numthreads(256, 1, 1)] void PlanetShapeCompute( //
+    uint id
+    : SV_DispatchThreadID) {
+  if (id >= num_of_vertices)
+    return;
 
-	float height;
-	// continent / ocean mask //
-	height = (clamp(fractal_noise(vertices[id], noise_settings_continent_shape), ocean_depth, continent_base) - continent_base) * continents_enabled;
-	float continent_mask = (continent_base - ocean_depth == 0) ? 0 : (height - (ocean_depth - continent_base)) / (continent_base - ocean_depth);
-	float ocean_mask = (continent_base - ocean_depth == 0) ? 0 : 1 - (height - (ocean_depth - continent_base)) / (continent_base - ocean_depth);
+  // Compute new position
+  out_vertices[id] = apply_noise(vertices[id]);
 
-	// flatness //
-	float flatness = (flatness_enabled)? (clamp(fractal_noise(vertices[id], noise_settings_flatness), flatness_ratio,  flatness_ratio + 0.1) - flatness_ratio) / 0.1 : 1 ;
+  // Compute surface normal
+  normals[id] = compute_normal(vertices[id], out_vertices[id]);
+}
 
-	// continent //
-	// mountains
-	float ridge_1 = ridge_noise(vertices[id], noise_settings_mountains) * continent_mask * flatness * 0.1 * mountains_enabled;
-	// crater
-	height += crater_noise(vertices[id], noise_settings_crater) * continent_mask * craters_enabled;
+float3 apply_noise(float3 position) {
+  // enables ==for readability==
+  int continents_enabled = enabled[0].x;
+  int general_noise_enabled = enabled[0].y;
+  int mountains_enabled = enabled[0].z;
+  int ocean_mountains_enabled = enabled[0].w;
+  int flatness_enabled = enabled[1].x;
+  int craters_enabled = enabled[1].y;
 
-	// ocean //
-	// underwater mountains
-	float ridge_2 = ridge_noise_2(vertices[id], noise_settings_ocean_mountains) * ocean_mask * flatness * 0.1 * ocean_mountains_enabled;
+  float height;
+  // continent / ocean mask //
+  height = (clamp(fractal_noise(position, noise_settings_continent_shape),
+                  ocean_depth, continent_base) -
+            continent_base) *
+           continents_enabled;
+  float continent_mask = (continent_base - ocean_depth == 0)
+                             ? 0
+                             : (height - (ocean_depth - continent_base)) /
+                                   (continent_base - ocean_depth);
+  float ocean_mask = (continent_base - ocean_depth == 0)
+                         ? 0
+                         : 1 - (height - (ocean_depth - continent_base)) /
+                                   (continent_base - ocean_depth);
 
-	height += smax(ridge_1, ridge_2, 8.0);
+  // flatness //
+  float flatness =
+      (flatness_enabled)
+          ? (clamp(fractal_noise(position, noise_settings_flatness),
+                   flatness_ratio, flatness_ratio + 0.1) -
+             flatness_ratio) /
+                0.1
+          : 1;
 
-	// both //
-	// bumps
-	height += abs(fractal_noise(vertices[id], noise_settings_both)) * general_noise_enabled;
-	
-    // Final height
-    height = radius * (1 + 0.5 * height);
+  // continent //
+  // mountains
+  float ridge_1 = ridge_noise(position, noise_settings_mountains) *
+                  continent_mask * flatness * 0.1 * mountains_enabled;
+  // crater
+  height += crater_noise(position, noise_settings_crater) * continent_mask *
+            craters_enabled;
 
-	out_vertices[id] = vertices[id] * height;
+  // ocean //
+  // underwater mountains
+  float ridge_2 = ridge_noise_2(position, noise_settings_ocean_mountains) *
+                  ocean_mask * flatness * 0.1 * ocean_mountains_enabled;
+
+  height += smax(ridge_1, ridge_2, 8.0);
+
+  // both //
+  // bumps
+  height +=
+      abs(fractal_noise(position, noise_settings_both)) * general_noise_enabled;
+
+  // Final height
+  height = radius * (1 + 0.5 * height);
+
+  return position * height;
+}
+
+float3 rotate_vector(float3 v, float3 ax, float angle);
+float3 compute_triangle_normal(float3 up, float3 p1, float3 p2, float3 p3);
+
+float3 compute_normal(float3 up, float3 p0) {
+  // Compute rotation axis
+  float3 other_vec = (up.x > 0.9) ? float3(0, 1, 0) : float3(1, 0, 0);
+  float3 rot_axis_1 = normalize(cross(up, other_vec));
+  float3 rot_axis_2 = normalize(cross(up, rot_axis_1));
+
+  // Copmute neighbouring points
+  float diff_angle = 0.001f;
+  float3 p1 = apply_noise(rotate_vector(up, rot_axis_1, diff_angle));
+  float3 p2 = apply_noise(rotate_vector(up, rot_axis_1, -diff_angle));
+  float3 p3 = apply_noise(rotate_vector(up, rot_axis_2, diff_angle));
+  float3 p4 = apply_noise(rotate_vector(up, rot_axis_2, -diff_angle));
+
+  // Compute triange normals
+  float3 n1 = compute_triangle_normal(up, p0, p1, p3);
+  float3 n2 = compute_triangle_normal(up, p0, p1, p4);
+  float3 n3 = compute_triangle_normal(up, p0, p2, p3);
+  float3 n4 = compute_triangle_normal(up, p0, p2, p4);
+
+  // Compute surface normal at postiion p0
+  float3 n = (n1 + n2 + n3 + n4) / 4.0f;
+
+  return n;
+}
+
+float3 rotate_vector(float3 v, float3 ax, float angle) {
+  float cos_theta = cos(angle);
+  float sin_theta = sin(angle);
+  float inv_cos_theta = 1.0 - cos_theta;
+
+  // Create rotation matrix
+  float3x3 rotationMatrix =
+      float3x3(cos_theta + ax.x * ax.x * inv_cos_theta,
+               ax.x * ax.y * inv_cos_theta - ax.z * sin_theta,
+               ax.x * ax.z * inv_cos_theta + ax.y * sin_theta,
+               ax.y * ax.x * inv_cos_theta + ax.z * sin_theta,
+               cos_theta + ax.y * ax.y * inv_cos_theta,
+               ax.y * ax.z * inv_cos_theta - ax.x * sin_theta,
+               ax.z * ax.x * inv_cos_theta - ax.y * sin_theta,
+               ax.z * ax.y * inv_cos_theta + ax.x * sin_theta,
+               cos_theta + ax.z * ax.z * inv_cos_theta);
+
+  return mul(rotationMatrix, v);
+}
+
+float3 compute_triangle_normal(float3 up, float3 p1, float3 p2, float3 p3) {
+  float3 p12 = p2 - p1;
+  float3 p13 = p3 - p1;
+  float3 n = normalize(cross(p12, p13));
+  return (dot(up, n) > 0) ? n : -n;
 }

@@ -110,7 +110,12 @@ public class ShapeSettings : ScriptableObject {
     }
     public virtual void randomize_seed() { }
 
-    public virtual void initialize(ComputeBuffer initial_position_buffer, ComputeBuffer position_buffer, int vertex_count) {
+    public virtual void initialize(
+        ComputeBuffer initial_position_buffer,
+        ComputeBuffer position_buffer,
+        ComputeBuffer normal_buffer,
+        int vertex_count
+    ) {
         if (shapeComputeShader == null) {
             Debug.LogError(error_compute_not_set);
             return;
@@ -131,6 +136,7 @@ public class ShapeSettings : ScriptableObject {
         // Set buffers
         shapeComputeShader.SetBuffer(shader_kernel_id, "vertices", initial_position_buffer);
         shapeComputeShader.SetBuffer(shader_kernel_id, "out_vertices", position_buffer);
+        shapeComputeShader.SetBuffer(shader_kernel_id, "normals", normal_buffer);
 
         // Set number of vertices
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);

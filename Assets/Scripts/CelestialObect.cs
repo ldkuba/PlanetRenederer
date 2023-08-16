@@ -91,7 +91,7 @@ public abstract class CelestialObject : MonoBehaviour {
         uv_buffer.SetData(uvs, 0, 0, vertex_count);
 
         // Initialize shape noise settings
-        shapeSettings.initialize(initial_pos_buffer, position_buffer, vertex_count);
+        shapeSettings.initialize(initial_pos_buffer, position_buffer, normal_buffer, vertex_count);
 
         // Set material buffers
         material.SetBuffer("position_buffer", position_buffer);
