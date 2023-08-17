@@ -113,7 +113,7 @@ float3 compute_normal(float3 up, float3 p0) {
   float3 rot_axis_2 = normalize(cross(up, rot_axis_1));
 
   // Copmute neighbouring points
-  float diff_angle = 0.001f;
+  float diff_angle = 1.0 / sqrt(num_of_vertices / 6.0);
   float3 p1 = apply_noise(rotate_vector(up, rot_axis_1, diff_angle));
   float3 p2 = apply_noise(rotate_vector(up, rot_axis_1, -diff_angle));
   float3 p3 = apply_noise(rotate_vector(up, rot_axis_2, diff_angle));
@@ -126,7 +126,7 @@ float3 compute_normal(float3 up, float3 p0) {
   float3 n4 = compute_triangle_normal(up, p0, p2, p4);
 
   // Compute surface normal at postiion p0
-  float3 n = (n1 + n2 + n3 + n4) / 4.0f;
+  float3 n = (n1 + n2 + n3 + n4) / 4.0;
 
   return n;
 }
