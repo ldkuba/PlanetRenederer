@@ -63,7 +63,7 @@ sysinfo.txt
 crashlytics-build.properties
 
 # Scenes, since they are too big
-[Aa]ssets/Scenes/*
+# [Aa]ssets/Scenes/*
 
 [Aa]ssets/**/addressables_content_state.bin
 [Aa]ssets/**/addressables_content_state.bin.meta
