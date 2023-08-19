@@ -195,7 +195,7 @@ public class ShapeSettings : ScriptableObject {
 
         // Here we will setup compute shader
         // First we need to find kernel
-        shader_kernel_id = shapeComputeShader.FindKernel("PlanetShapeCompute");
+        shader_kernel_id = shapeComputeShader.FindKernel("compute_shape");
 
         // Compute required thread count
         shapeComputeShader.GetKernelThreadGroupSizes(shader_kernel_id, out thread_x, out thread_y, out thread_z);

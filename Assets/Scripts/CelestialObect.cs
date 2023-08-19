@@ -22,6 +22,13 @@ public abstract class CelestialObject : MonoBehaviour {
     private ComputeBuffer normal_buffer;
     private ComputeBuffer uv_buffer;
 
+    ~CelestialObject() {
+        initial_pos_buffer?.Release();
+        position_buffer?.Release();
+        normal_buffer?.Release();
+        uv_buffer?.Release();
+    }
+
     // Public Methods
     [ContextMenu("initialize")]
     public void initialize() {
