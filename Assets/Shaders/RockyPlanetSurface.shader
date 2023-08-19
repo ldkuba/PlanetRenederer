@@ -81,7 +81,9 @@ Shader "RockyPlanetSurface"
 				// Sample texture
                 fixed4 col = _Color; //tex2D(_MainTex, i.uv);
 				// Compute shadow attenuation (1.0 = fully lit, 0.0 = fully shadowed)
+				i._ShadowCoord.w = i._ShadowCoord.z; //  Fixes broken shadow outside unit sphere
                 fixed shadow = SHADOW_ATTENUATION(i);
+                // fixed shadow = tex2D(_ShadowMapTexture, i._ShadowCoord.xy / i._ShadowCoord.z);
 				// Darken light's illumination with shadow, keep ambient intact
                 fixed3 lighting = i.diff * shadow + i.ambient;
                 // Multiply by lighting
