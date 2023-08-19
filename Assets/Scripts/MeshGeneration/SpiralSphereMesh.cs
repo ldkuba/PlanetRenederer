@@ -31,7 +31,7 @@ public static class SpiralSphereMesh {
 
     // methods
     // construct mesh
-    public static SphereMesh construct_mesh(Mesh target_mesh, uint number_of_points) {
+    public static SphereMesh construct_mesh(uint number_of_points) {
         // construct unit sphere
         SphereMesh sphere;
         // if sphere with a given number of points is found sets vertices and indices and returns true

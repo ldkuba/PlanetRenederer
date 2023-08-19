@@ -14,29 +14,29 @@ public class COGenEditor : Editor {
     public override void OnInspectorGUI() {
         // Default noise settings
         EditorGUILayout.LabelField("Default Noise Settings");
-        switch (COG.ObjectType) {
+        switch (COG.objectType) {
             case CelestialObjectGenerator.COType.Asteroid:
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("DefaultAsteroidShapeSettings"), true);
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultAsteroidShapeSettings"), true);
                 break;
             case CelestialObjectGenerator.COType.Moon:
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("DefaultMoonShapeSettings"), true);
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultMoonShapeSettings"), true);
                 break;
             case CelestialObjectGenerator.COType.RockyDryPlanet:
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("DefaultRockyPlanetDryShapeSettings"), true);
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultRockyPlanetDryShapeSettings"), true);
                 break;
             case CelestialObjectGenerator.COType.RockyWetPlanet:
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("DefaultRockyPlanetWetShapeSettings"), true);
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("DefaultOceanShapeSettings"), true);
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultRockyPlanetWetShapeSettings"), true);
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultOceanShapeSettings"), true);
                 break;
         }
 
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Sphere generation");
-        EditorGUILayout.PropertyField(COG_serialized.FindProperty("SphereType"));
+        EditorGUILayout.PropertyField(COG_serialized.FindProperty("sphereType"));
 
         int min_resolution = 1;
         int max_resolution = 10;
-        switch (COG.SphereType) {
+        switch (COG.sphereType) {
             case SphereMeshGenerator.SphereType.Spiral:
                 min_resolution = 20;
                 max_resolution = 1000000;
@@ -46,28 +46,28 @@ public class COGenEditor : Editor {
                 max_resolution = 1000;
                 break;
         }
-        if (COG.SphereResolution < min_resolution) COG.SphereResolution = min_resolution;
-        if (COG.SphereResolution > max_resolution) COG.SphereResolution = max_resolution;
-        EditorGUILayout.IntSlider(COG_serialized.FindProperty("SphereResolution"), min_resolution, max_resolution);
+        if (COG.sphereResolution < min_resolution) COG.sphereResolution = min_resolution;
+        if (COG.sphereResolution > max_resolution) COG.sphereResolution = max_resolution;
+        EditorGUILayout.IntSlider(COG_serialized.FindProperty("sphereResolution"), min_resolution, max_resolution);
 
-        EditorGUILayout.PropertyField(COG_serialized.FindProperty("ObjectRadius"), new("Radius"), true);
+        EditorGUILayout.PropertyField(COG_serialized.FindProperty("objectRadius"), new("Radius"), true);
 
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Materials Used");
-        if (COG.ObjectType == CelestialObjectGenerator.COType.GasPlanet) {
-        } else if (COG.ObjectType == CelestialObjectGenerator.COType.Star) {
-            EditorGUILayout.PropertyField(COG_serialized.FindProperty("StarMaterial"), true);
+        if (COG.objectType == CelestialObjectGenerator.COType.GasPlanet) {
+        } else if (COG.objectType == CelestialObjectGenerator.COType.Star) {
+            EditorGUILayout.PropertyField(COG_serialized.FindProperty("starMaterial"), true);
         } else {
-            EditorGUILayout.PropertyField(COG_serialized.FindProperty("SurfaceMaterial"), true);
-            if (COG.ObjectType == CelestialObjectGenerator.COType.RockyWetPlanet)
-                EditorGUILayout.PropertyField(COG_serialized.FindProperty("OceanMaterial"), true);
+            EditorGUILayout.PropertyField(COG_serialized.FindProperty("surfaceMaterial"), true);
+            if (COG.objectType == CelestialObjectGenerator.COType.RockyWetPlanet)
+                EditorGUILayout.PropertyField(COG_serialized.FindProperty("oceanMaterial"), true);
         }
 
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Object Settings");
 
-        EditorGUILayout.PropertyField(COG_serialized.FindProperty("ObjectName"), true);
-        EditorGUILayout.PropertyField(COG_serialized.FindProperty("ObjectType"), true);
+        EditorGUILayout.PropertyField(COG_serialized.FindProperty("objectName"), true);
+        EditorGUILayout.PropertyField(COG_serialized.FindProperty("objectType"), true);
 
         if (GUILayout.Button("Generate")) {
             COG.generate_object();

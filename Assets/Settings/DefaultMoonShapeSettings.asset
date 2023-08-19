@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9fa73833c3d7c8b42bf3a816259a0b5c, type: 3}
+  m_Name: DefaultMoonShapeSettings
+  m_EditorClassIdentifier: 
+  radius: 1
+  shapeComputeShader: {fileID: 7200000, guid: 1e629094506fbd842a80ea93ce2c1ece, type: 3}
+  continentRatio: 1
+  oceanDepth: 0.153
+  flatness: 0.473
+  continentNoise:
+    enable: 0
+    numberOfLayers: 1
+    amplitudeFading: 0
+    baseFrequency: 0
+    frequencyMultiplier: 0
+    strength: 0
+    baseHeight: 0
+    seed: {x: 0, y: 0, z: 0}
+  flatnessNoise:
+    enable: 1
+    numberOfLayers: 3
+    amplitudeFading: 0.5
+    baseFrequency: 1.5
+    frequencyMultiplier: 2
+    strength: 0.4
+    baseHeight: 0
+    seed: {x: -0.94, y: 28.42, z: 79.25}
+  generalNoise:
+    enable: 1
+    numberOfLayers: 9
+    amplitudeFading: 0.5
+    baseFrequency: 3
+    frequencyMultiplier: 2
+    strength: 0.2
+    baseHeight: 0
+    seed: {x: -83.28, y: 23.43, z: -161.26}
+  mountainsNoise:
+    enable: 1
+    numberOfLayers: 3
+    amplitudeFading: 0.5
+    baseFrequency: 4.64
+    frequencyMultiplier: 3
+    strength: 0.8
+    baseHeight: 0
+    seed: {x: 0, y: 0, z: 0}
+    power: 2.26
+    gain: 0.736
+  underwaterMountainsNoise:
+    enable: 0
+    numberOfLayers: 0
+    amplitudeFading: 0
+    baseFrequency: 0
+    frequencyMultiplier: 0
+    strength: 0
+    baseHeight: 0
+    seed: {x: 0, y: 0, z: 0}
+    power: 0
+    gain: 0
+    offset: 0
+  craterNoise:
+    enable: 1
+    numberOfLayers: 3
+    amplitudeFading: 0.5
+    baseFrequency: 2.5
+    frequencyMultiplier: 2
+    strength: 1.03
+    baseHeight: 0
+    seed: {x: 0, y: 0, z: 0}
+    depth: 0.05
+    radius: 3
+    slope: 6
+    centralElevationHeight: 2
+    centralElevationWidth: 2
+    outsideSlope: 2
+    jitter: 4

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 
 public class CubeSphereMesh {
-    public static SphereMesh construct_mesh(Mesh target_mesh, uint resolution) {
+    public static SphereMesh construct_mesh(uint resolution) {
         Stopwatch sw = new();
 
         sw.Start();

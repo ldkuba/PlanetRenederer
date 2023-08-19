@@ -35,10 +35,10 @@ public static class SphereMeshGenerator {
         SphereMesh unit_sphere;
         switch (type) {
             case SphereType.Spiral:
-                unit_sphere = SpiralSphereMesh.construct_mesh(target_mesh, resolution);
+                unit_sphere = SpiralSphereMesh.construct_mesh(resolution);
                 break;
             case SphereType.Cube:
-                unit_sphere = CubeSphereMesh.construct_mesh(target_mesh, resolution);
+                unit_sphere = CubeSphereMesh.construct_mesh(resolution);
                 break;
             default:
                 throw new System.Exception("Unimplemented.");

@@ -13,44 +13,44 @@ public class CelestialObjectGenerator : MonoBehaviour {
         Star
     }
 
-    public AsteroidShapeSettings DefaultAsteroidShapeSettings;
-    public RockyPlanetShapeSettings DefaultMoonShapeSettings;
-    public RockyPlanetShapeSettings DefaultRockyPlanetDryShapeSettings;
-    public RockyPlanetShapeSettings DefaultRockyPlanetWetShapeSettings;
-    public OceanShapeSettings DefaultOceanShapeSettings;
+    public AsteroidShapeSettings defaultAsteroidShapeSettings;
+    public RockyPlanetShapeSettings defaultMoonShapeSettings;
+    public RockyPlanetShapeSettings defaultRockyPlanetDryShapeSettings;
+    public RockyPlanetShapeSettings defaultRockyPlanetWetShapeSettings;
+    public OceanShapeSettings defaultOceanShapeSettings;
 
     [SerializeField]
-    Material SurfaceMaterial;
+    Material surfaceMaterial;
     [SerializeField]
-    Material OceanMaterial;
+    Material oceanMaterial;
     [SerializeField]
-    Material StarMaterial;
+    Material starMaterial;
 
-    public string ObjectName = "Celestial Object";
-    public COType ObjectType = COType.Asteroid;
+    public string objectName = "Celestial Object";
+    public COType objectType = COType.Asteroid;
     [Min(0.5f)]
-    public float ObjectRadius = 1f;
+    public float objectRadius = 1f;
 
-    public SphereMeshGenerator.SphereType SphereType = SphereMeshGenerator.SphereType.Cube;
-    public int SphereResolution = 100;
+    public SphereMeshGenerator.SphereType sphereType = SphereMeshGenerator.SphereType.Cube;
+    public int sphereResolution = 100;
 
     public void generate_object() {
-        GameObject celestial_body = new(ObjectName);
+        GameObject celestial_body = new(objectName);
 
         GameObject surface = new("surface");
         surface.transform.SetParent(celestial_body.transform);
 
         // if object is has no surface
-        if (ObjectType == COType.Star) {
+        if (objectType == COType.Star) {
             // star script
             StarSphere starS = surface.AddComponent<StarSphere>();
             // resolution
-            starS.SphereType = SphereType;
-            starS.resolution = SphereResolution;
+            starS.SphereType = sphereType;
+            starS.resolution = sphereResolution;
             // material
-            starS.material = StarMaterial;
+            starS.material = starMaterial;
             // radius
-            starS.Radius = ObjectRadius;
+            starS.Radius = objectRadius;
             starS.OnRadiusUpdate();
             // tag
             starS.gameObject.tag = "StarSurface";
@@ -61,11 +61,11 @@ public class CelestialObjectGenerator : MonoBehaviour {
             // light
             GameObject light = Instantiate(Resources.Load<GameObject>("Starlight"));
             light.transform.SetParent(celestial_body.transform);
-            light.name = ObjectName + " " + "Light";
+            light.name = objectName + " " + "Light";
 
             return;
         }
-        if (ObjectType == COType.GasPlanet) {
+        if (objectType == COType.GasPlanet) {
             return;
         }
 
@@ -73,30 +73,30 @@ public class CelestialObjectGenerator : MonoBehaviour {
         // planet script
         Planet planetS = surface.AddComponent<Planet>();
         // resolution
-        planetS.SphereType = SphereType;
-        planetS.resolution = SphereResolution;
+        planetS.SphereType = sphereType;
+        planetS.resolution = sphereResolution;
         // material
-        planetS.material = SurfaceMaterial;
+        planetS.material = new(surfaceMaterial);
         // shape
-        switch (ObjectType) {
+        switch (objectType) {
             case COType.Asteroid:
                 planetS.shapeSettings = ScriptableObject.CreateInstance<AsteroidShapeSettings>();
-                planetS.shapeSettings.set_settings(DefaultAsteroidShapeSettings);
+                planetS.shapeSettings.set_settings(defaultAsteroidShapeSettings);
                 break;
             case COType.Moon:
                 planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.shapeSettings.set_settings(DefaultMoonShapeSettings);
+                planetS.shapeSettings.set_settings(defaultMoonShapeSettings);
                 break;
             case COType.RockyDryPlanet:
                 planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.shapeSettings.set_settings(DefaultRockyPlanetDryShapeSettings);
+                planetS.shapeSettings.set_settings(defaultRockyPlanetDryShapeSettings);
                 break;
             case COType.RockyWetPlanet:
                 planetS.shapeSettings = ScriptableObject.CreateInstance<RockyPlanetShapeSettings>();
-                planetS.shapeSettings.set_settings(DefaultRockyPlanetWetShapeSettings);
+                planetS.shapeSettings.set_settings(defaultRockyPlanetWetShapeSettings);
                 break;
         }
-        planetS.shapeSettings.radius = ObjectRadius;
+        planetS.shapeSettings.radius = objectRadius;
         planetS.shapeSettings.randomize_seed();
         // tag
         planetS.gameObject.tag = "Surface";
@@ -104,19 +104,19 @@ public class CelestialObjectGenerator : MonoBehaviour {
         planetS.generate_planet();
 
         // if object has an ocean
-        if (ObjectType == COType.RockyWetPlanet) {
+        if (objectType == COType.RockyWetPlanet) {
             GameObject ocean = new("ocean");
             // ocean script
             OceanSphere oceanS = ocean.AddComponent<OceanSphere>();
             // resolution
-            oceanS.SphereType = SphereType;
-            oceanS.resolution = SphereResolution;
+            oceanS.SphereType = sphereType;
+            oceanS.resolution = sphereResolution;
             // material
-            oceanS.material = OceanMaterial;
+            oceanS.material = oceanMaterial;
             // shape
             oceanS.shapeSettings = ScriptableObject.CreateInstance<OceanShapeSettings>();
-            oceanS.shapeSettings.set_settings(DefaultOceanShapeSettings);
-            oceanS.shapeSettings.radius = ObjectRadius;
+            oceanS.shapeSettings.set_settings(defaultOceanShapeSettings);
+            oceanS.shapeSettings.radius = objectRadius;
             oceanS.shapeSettings.randomize_seed();
             // tag
             oceanS.gameObject.tag = "Ocean";

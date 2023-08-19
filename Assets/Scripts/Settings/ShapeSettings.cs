@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class ShapeSettings : ScriptableObject {
     [System.Serializable]
@@ -19,6 +16,8 @@ public class ShapeSettings : ScriptableObject {
         public float baseHeight;
         public Vector3 seed;
 
+        private static readonly System.Random r = new();
+
         public NoiseSettings(NoiseSettings settings) {
             enable = settings.enable;
             numberOfLayers = settings.numberOfLayers;
@@ -32,7 +31,20 @@ public class ShapeSettings : ScriptableObject {
             seed.z = settings.seed.z;
         }
 
-        private static System.Random r = new System.Random();
+        public virtual float[] get_noise() {
+            return new float[] {
+                numberOfLayers,
+                amplitudeFading,
+                baseFrequency,
+                frequencyMultiplier,
+                strength,
+                baseHeight,
+                seed.x,
+                seed.y,
+                seed.z
+            };
+        }
+
         public void randomize_seed() {
             seed.x = rand_to_float(r.NextDouble(), r.Next(15));
             seed.y = rand_to_float(r.NextDouble(), r.Next(15));
@@ -55,6 +67,22 @@ public class ShapeSettings : ScriptableObject {
             power = settings.power;
             gain = settings.gain;
         }
+
+        public override float[] get_noise() {
+            return new float[] {
+                numberOfLayers,
+                amplitudeFading,
+                baseFrequency,
+                frequencyMultiplier,
+                strength,
+                baseHeight,
+                seed.x,
+                seed.y,
+                seed.z,
+                power,
+                gain
+            };
+        }
     }
 
     [System.Serializable]
@@ -63,6 +91,23 @@ public class ShapeSettings : ScriptableObject {
 
         public UMNoiseSettings(UMNoiseSettings settings) : base(settings) {
             offset = settings.offset;
+        }
+
+        public override float[] get_noise() {
+            return new float[] {
+                numberOfLayers,
+                amplitudeFading,
+                baseFrequency,
+                frequencyMultiplier,
+                strength,
+                baseHeight,
+                seed.x,
+                seed.y,
+                seed.z,
+                power,
+                gain,
+                offset
+            };
         }
     }
 
@@ -91,6 +136,27 @@ public class ShapeSettings : ScriptableObject {
             outsideSlope = settings.outsideSlope;
             jitter = settings.jitter;
         }
+
+        public override float[] get_noise() {
+            return new float[] {
+                numberOfLayers,
+                depth,
+                amplitudeFading,
+                baseFrequency,
+                frequencyMultiplier,
+                radius,
+                slope,
+                centralElevationHeight,
+                centralElevationWidth,
+                outsideSlope,
+                jitter,
+                strength,
+                baseHeight,
+                seed.x,
+                seed.y,
+                seed.z
+            };
+        }
     }
 
     // Shape settings
@@ -99,10 +165,16 @@ public class ShapeSettings : ScriptableObject {
 
     // Noise shape compute
     public ComputeShader shapeComputeShader;
-    protected int shader_kernel_id;
-    protected uint thread_x;
-    protected uint thread_y;
-    protected uint thread_z;
+    private int shader_kernel_id;
+    private uint thread_x;
+    private uint thread_y;
+    private uint thread_z;
+
+    // Noise compute buffers
+    ComputeBuffer initial_position_buffer;
+    ComputeBuffer position_buffer;
+    ComputeBuffer normal_buffer;
+    int vertex_count;
 
     public virtual void set_settings(ShapeSettings settings) {
         shapeComputeShader = settings.shapeComputeShader;
@@ -116,14 +188,10 @@ public class ShapeSettings : ScriptableObject {
         ComputeBuffer normal_buffer,
         int vertex_count
     ) {
-        if (shapeComputeShader == null) {
-            Debug.LogError(error_compute_not_set);
-            return;
-        }
-        if (initial_position_buffer.count < position_buffer.count) {
-            Debug.LogError(error_position_buffer_size);
-            return;
-        }
+        if (shapeComputeShader == null)
+            throw new UnityException("Error in :: ShapeSettings :: initialize :: Compute shader not set.");
+        if (initial_position_buffer.count < position_buffer.count)
+            throw new UnityException("Error in :: ShapeSettings :: initialize :: Initial position buffer incompatible with the current one.");
 
         // Here we will setup compute shader
         // First we need to find kernel
@@ -134,6 +202,20 @@ public class ShapeSettings : ScriptableObject {
         thread_x = (uint) Mathf.CeilToInt(1.0f * vertex_count / thread_x);
 
         // Set buffers
+        this.initial_position_buffer = initial_position_buffer;
+        this.position_buffer = position_buffer;
+        this.normal_buffer = normal_buffer;
+        this.vertex_count = vertex_count;
+
+        // Set number of vertices
+        shapeComputeShader.SetInt("num_of_vertices", vertex_count);
+    }
+
+    private void set_core_noise_settings() {
+        // Send radius
+        shapeComputeShader.SetFloat("radius", radius);
+
+        // Set buffers
         shapeComputeShader.SetBuffer(shader_kernel_id, "vertices", initial_position_buffer);
         shapeComputeShader.SetBuffer(shader_kernel_id, "out_vertices", position_buffer);
         shapeComputeShader.SetBuffer(shader_kernel_id, "normals", normal_buffer);
@@ -141,15 +223,18 @@ public class ShapeSettings : ScriptableObject {
         // Set number of vertices
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);
     }
+    protected virtual void set_additional_noise_settings() { }
 
-    public virtual void apply_noise() {
-        // Send radius
-        shapeComputeShader.SetFloat("radius", radius);
+    public void apply_noise() {
+        // Check validity
+        if (shapeComputeShader == null)
+            throw new UnityException("Error in :: ShapeSettings :: apply_noise :: Compute shader not set.");
+
+        // Set noise settings
+        set_core_noise_settings();
+        set_additional_noise_settings();
 
         // run
         shapeComputeShader.Dispatch(shader_kernel_id, (int) thread_x, (int) thread_y, (int) thread_z);
     }
-
-    protected const String error_compute_not_set = "Compute shader not set.";
-    protected const String error_position_buffer_size = "Initial position buffer incompatible with the current one.";
 }
