@@ -73,9 +73,8 @@ public abstract class CelestialObject : MonoBehaviour {
             Debug.Log("Not initialized!");
             return;
         }
-
-        generate_mesh();
-        apply_noise();
+        
+        generate();
     }
 
     public void OnShapeSettingsUpdated() {
