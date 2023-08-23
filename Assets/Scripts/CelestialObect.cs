@@ -8,6 +8,7 @@ public abstract class CelestialObject : MonoBehaviour {
     public ShapeSettings shapeSettings;
     [SerializeField, HideInInspector]
     protected MeshFilter mesh_filter;
+    public GameObject mainCamera;
 
     // Settings
     [HideInInspector]
@@ -22,7 +23,11 @@ public abstract class CelestialObject : MonoBehaviour {
     private ComputeBuffer normal_buffer;
     private ComputeBuffer uv_buffer;
 
+    public CelestialObject() {
+        Debug.Log("CO created");
+    }
     ~CelestialObject() {
+        Debug.Log("CO destroyed");
         initial_pos_buffer?.Release();
         position_buffer?.Release();
         normal_buffer?.Release();
@@ -100,6 +105,10 @@ public abstract class CelestialObject : MonoBehaviour {
         // Initialize shape noise settings
         shapeSettings.initialize(initial_pos_buffer, position_buffer, normal_buffer, vertex_count);
 
+        // Initialize culling
+        if (mainCamera != null)
+            shapeSettings.setup_view_based_culling(transform, mainCamera.transform);
+
         // Set material buffers
         material.SetBuffer("position_buffer", position_buffer);
         material.SetBuffer("normal_buffer", normal_buffer);
@@ -113,10 +122,8 @@ public abstract class CelestialObject : MonoBehaviour {
     }
 
     private void apply_noise() {
-        if (shapeSettings == null) {
-            Debug.Log("Shape settings not set!");
-            return;
-        }
+        if (shapeSettings == null)
+            throw new UnityException("Error in :: CelestialObject :: apply_noise :: Shape settings not set!");
 
         shapeSettings.apply_noise();
         // MeshF.sharedMesh.RecalculateNormals();

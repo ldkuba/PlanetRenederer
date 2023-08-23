@@ -9,6 +9,5 @@ public class Planet : CelestialObject {
     public void generate_planet() {
         initialize();
         OnResolutionChanged();
-        OnShapeSettingsUpdated();
     }
 }

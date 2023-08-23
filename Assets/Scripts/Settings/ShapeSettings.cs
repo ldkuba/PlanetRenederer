@@ -45,6 +45,10 @@ public class ShapeSettings : ScriptableObject {
             };
         }
 
+        public virtual Vector2 get_noise_range() {
+            return enable ? new(baseHeight - strength, baseHeight + strength) : new();
+        }
+
         public void randomize_seed() {
             seed.x = rand_to_float(r.NextDouble(), r.Next(15));
             seed.y = rand_to_float(r.NextDouble(), r.Next(15));
@@ -82,6 +86,10 @@ public class ShapeSettings : ScriptableObject {
                 power,
                 gain
             };
+        }
+
+        public override Vector2 get_noise_range() {
+            return enable ? new(baseHeight, baseHeight + strength) : new();
         }
     }
 
@@ -157,6 +165,10 @@ public class ShapeSettings : ScriptableObject {
                 seed.z
             };
         }
+
+        public override Vector2 get_noise_range() {
+            return enable ? new(baseHeight - strength * depth, baseHeight) : new();
+        }
     }
 
     // Shape settings
@@ -171,10 +183,15 @@ public class ShapeSettings : ScriptableObject {
     private uint thread_z;
 
     // Noise compute buffers
-    ComputeBuffer initial_position_buffer;
-    ComputeBuffer position_buffer;
-    ComputeBuffer normal_buffer;
-    int vertex_count;
+    private ComputeBuffer initial_position_buffer;
+    private ComputeBuffer position_buffer;
+    private ComputeBuffer normal_buffer;
+    private int vertex_count;
+
+    // Outside context
+    protected bool view_based_culling = false;
+    protected Vector3 camera_position;
+    protected Vector3 shape_center;
 
     public virtual void set_settings(ShapeSettings settings) {
         shapeComputeShader = settings.shapeComputeShader;
@@ -211,6 +228,12 @@ public class ShapeSettings : ScriptableObject {
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);
     }
 
+    public void setup_view_based_culling(Transform shape_center, Transform camera_position) {
+        view_based_culling = true;
+        this.camera_position = camera_position.position;
+        this.shape_center = shape_center.position;
+    }
+
     private void set_core_noise_settings() {
         // Send radius
         shapeComputeShader.SetFloat("radius", radius);
@@ -234,7 +257,111 @@ public class ShapeSettings : ScriptableObject {
         set_core_noise_settings();
         set_additional_noise_settings();
 
+        // Set culling if enabled
+        set_culling_info();
+
         // run
         shapeComputeShader.Dispatch(shader_kernel_id, (int) thread_x, (int) thread_y, (int) thread_z);
+    }
+
+    protected virtual Vector2 noise_range() {
+        return new Vector2(radius, radius);
+    }
+
+    private void set_culling_info() {
+        if (!view_based_culling) {
+            // Render everything
+            shapeComputeShader.SetFloats("shape_limits", new float[] { 0, 0, 0, 0 });
+            return;
+        }
+
+        // Compute noise range
+        var total_noise_range = noise_range();
+        var min_r = total_noise_range.x; // Radius of the smaller sphere
+        var max_r = total_noise_range.y; // Radius of the larger sphere
+        if (max_r < min_r)
+            throw new UnityException(
+            "Error in :: ShapeSettings :: set_culling_info :: " +
+            "Maximum computed noise smaller then the minimum one/");
+
+        // Check if we are inside
+        var to_camera = camera_position - shape_center;
+        var camera_dir = to_camera.normalized;
+        var camera_dist = to_camera.magnitude;
+        if (camera_dist < min_r) {
+            // Render nothing
+            shapeComputeShader.SetFloats("shape_limits", new float[] { 0, 0, 0, 1 });
+            return;
+        }
+
+        // Compute maximum render-able angle
+        var to_circle_dir = compute_camera_to_circle_dir(min_r);
+        var max_render_angle = compute_dot_product_limit(camera_position, to_circle_dir, shape_center, max_r);
+
+        // Send this info to compute shader
+        shapeComputeShader.SetFloats("shape_limits", new float[] {
+            camera_dir.x,
+            camera_dir.y,
+            camera_dir.z,
+            max_render_angle
+        });
+    }
+
+    private Vector3 compute_camera_to_circle_dir(float sphere_r) {
+        var to_center = shape_center - camera_position;
+        var dist_to_center = to_center.magnitude;
+        var sq_dist_to_center = to_center.sqrMagnitude;
+
+        // Compute distance from camera to tangent circle
+        var dist_to_circle = Mathf.Sqrt(sq_dist_to_center - sphere_r * sphere_r);
+
+        // Compute distance from camera to tangent circle center
+        var dist_to_circle_center = dist_to_circle * dist_to_circle / dist_to_center;
+
+        // Compute tangent circle radius
+        var circle_r = dist_to_circle * sphere_r / dist_to_center;
+
+        // Compute a vector colinear with the circle plane
+        var to_center_dir = to_center.normalized;
+        var other_vec = (to_center_dir.x > 0.9) ? new Vector3(0, 1, 0) : new Vector3(1, 0, 0);
+        var circle_v = Vector3.Cross(to_center_dir, other_vec).normalized;
+
+        // Get coords of a point on a tangent circle
+        var circle_point = camera_position + dist_to_circle_center * to_center_dir + circle_r * circle_v;
+
+        // Compute direction vector
+        return (circle_point - camera_position).normalized;
+    }
+
+    private float compute_dot_product_limit(Vector3 line_org, Vector3 line_dir, Vector3 sphere_center, float sphere_r) {
+        var center_to_org = line_org - sphere_center;
+        var center_to_org_dir = center_to_org.normalized;
+
+        // Solve equation for intersection
+        // Calculate coefficients for the quadratic equation
+        var a = Vector3.Dot(line_dir, line_dir);
+        var b = 2 * Vector3.Dot(line_dir, center_to_org);
+        var c = Vector3.Dot(center_to_org, center_to_org) - sphere_r * sphere_r;
+
+        // Calculate discriminant of the quadratic equation
+        var d = b * b - 4 * a * c;
+        if (d < -1.0e-6)
+            throw new UnityException(
+                "Error in :: ShapeSettings :: compute_camera_to_larger_sphere_intersection_dist :: " +
+                "Something is wrong with the function implementation. Impossible outcome.");
+        if (d < 0) d = 0;
+
+        // Compute solutions
+        var t1 = (-b + Mathf.Sqrt(d)) / (2 * a);
+        var t2 = (-b - Mathf.Sqrt(d)) / (2 * a);
+        var t = Mathf.Max(t1, t2);
+
+        // Find intersection point
+        var intersection_p = line_org + line_dir * t;
+
+        // Find center to intersection direction
+        var center_to_int_dir = (intersection_p - sphere_center).normalized;
+
+        return Vector3.Dot(center_to_int_dir, center_to_org_dir);
     }
 }
