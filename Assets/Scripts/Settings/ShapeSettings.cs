@@ -190,8 +190,8 @@ public class ShapeSettings : ScriptableObject {
 
     // Outside context
     protected bool view_based_culling = false;
-    protected Vector3 camera_position;
-    protected Vector3 shape_center;
+    protected Transform camera_t;
+    protected Transform shape_t;
 
     public virtual void set_settings(ShapeSettings settings) {
         shapeComputeShader = settings.shapeComputeShader;
@@ -228,15 +228,15 @@ public class ShapeSettings : ScriptableObject {
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);
     }
 
-    public void setup_view_based_culling(Transform shape_center, Transform camera_position) {
+    public void setup_view_based_culling(Transform shape_transform, Transform camera_transform) {
         view_based_culling = true;
-        this.camera_position = camera_position.position;
-        this.shape_center = shape_center.position;
+        camera_t = camera_transform;
+        shape_t = shape_transform;
     }
 
     private void set_core_noise_settings() {
-        // Send radius
-        shapeComputeShader.SetFloat("radius", radius);
+        // Set radius
+        shape_t.localScale = new(radius, radius, radius);
 
         // Set buffers
         shapeComputeShader.SetBuffer(shader_kernel_id, "vertices", initial_position_buffer);
@@ -285,7 +285,7 @@ public class ShapeSettings : ScriptableObject {
             "Maximum computed noise smaller then the minimum one/");
 
         // Check if we are inside
-        var to_camera = camera_position - shape_center;
+        var to_camera = camera_t.position - shape_t.position;
         var camera_dir = to_camera.normalized;
         var camera_dist = to_camera.magnitude;
         if (camera_dist < min_r) {
@@ -295,8 +295,8 @@ public class ShapeSettings : ScriptableObject {
         }
 
         // Compute maximum render-able angle
-        var to_circle_dir = compute_camera_to_circle_dir(min_r);
-        var max_render_angle = compute_dot_product_limit(camera_position, to_circle_dir, shape_center, max_r);
+        var to_circle_dir = compute_camera_to_circle_dir(camera_t.position, -to_camera, min_r);
+        var max_render_angle = compute_dot_product_limit(camera_t.position, to_circle_dir, shape_t.position, max_r);
 
         // Send this info to compute shader
         shapeComputeShader.SetFloats("shape_limits", new float[] {
@@ -307,8 +307,7 @@ public class ShapeSettings : ScriptableObject {
         });
     }
 
-    private Vector3 compute_camera_to_circle_dir(float sphere_r) {
-        var to_center = shape_center - camera_position;
+    private Vector3 compute_camera_to_circle_dir(Vector3 camera_position, Vector3 to_center, float sphere_r) {
         var dist_to_center = to_center.magnitude;
         var sq_dist_to_center = to_center.sqrMagnitude;
 

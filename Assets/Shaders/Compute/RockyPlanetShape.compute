@@ -13,7 +13,6 @@ RWStructuredBuffer<float3> normals;
 uint num_of_vertices;
 
 // Settings
-float radius;
 float4 shape_limits;
 // Shape Settings
 int4 enabled[2];
@@ -106,8 +105,7 @@ float3 apply_noise(float3 position) {
               fractal_noise(position, noise_settings_both);
 
   // Final height
-  float height = (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
-  height = radius * (1 + height);
+  float height = 1 + (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
 
   return position * height;
 }
