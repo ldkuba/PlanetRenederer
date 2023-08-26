@@ -13,7 +13,8 @@ RWStructuredBuffer<float3> normals;
 uint num_of_vertices;
 
 // Settings
-float radius;
+float4 shape_limits;
+float4 old_shape_limits;
 // Shape Settings
 int4 enabled[2];
 float4 noise_settings_continent_shape[3];
@@ -27,10 +28,21 @@ float continent_base;
 float ocean_depth;
 float flatness_ratio;
 
+bool vertex_is_visible(float3 vertex);
+bool vertex_was_visible(float3 vertex);
+
 // Kernels
 [numthreads(256, 1, 1)] void compute_shape(uint id
                                            : SV_DispatchThreadID) {
   if (id >= num_of_vertices)
+    return;
+
+  // Check for visibility
+  if (!vertex_is_visible(vertices[id])) {
+    out_vertices[id] = float3(0, 0, 0);
+    return;
+  }
+  if (vertex_was_visible(vertices[id]))
     return;
 
   // Compute new position
@@ -39,6 +51,18 @@ float flatness_ratio;
   // Compute surface normal
   float diff_angle = 1.0 / sqrt(num_of_vertices / 6.0);
   normals[id] = compute_normal(vertices[id], out_vertices[id], diff_angle);
+}
+
+bool vertex_is_visible(float3 vertex) {
+  float3 camera_dir = shape_limits.xyz;
+  float max_render_angle = shape_limits.w;
+  return dot(vertex, camera_dir) >= max_render_angle;
+}
+
+bool vertex_was_visible(float3 vertex) {
+  float3 camera_dir = old_shape_limits.xyz;
+  float max_render_angle = old_shape_limits.w;
+  return dot(vertex, camera_dir) >= max_render_angle;
 }
 
 float3 apply_noise(float3 position) {
@@ -88,11 +112,11 @@ float3 apply_noise(float3 position) {
   // both //
   // bumps
   float bumbs = general_noise_enabled * //
-                abs(fractal_noise(position, noise_settings_both));
+                fractal_noise(position, noise_settings_both);
 
   // Final height
-  float height = (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
-  height = radius * (1 + height);
+  float height =
+      1 + (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
 
   return position * height;
 }

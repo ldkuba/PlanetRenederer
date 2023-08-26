@@ -35,12 +35,18 @@ public class CelestialObjectGenerator : MonoBehaviour {
     public int sphereResolution = 100;
 
     public void generate_object() {
+        // Generate object
         GameObject celestial_body = new(objectName);
 
+        // Get main camera
+        GameObject main_camera = GameObject.Find("Main Camera");
+        var camera_shape_controller = main_camera.GetComponent<MainCameraShapeController>();
+
+        // We are sure to have a surface, but...
         GameObject surface = new("surface");
         surface.transform.SetParent(celestial_body.transform);
 
-        // if object is has no surface
+        // If object is has no surface
         if (objectType == COType.Star) {
             // star script
             StarSphere starS = surface.AddComponent<StarSphere>();
@@ -54,8 +60,8 @@ public class CelestialObjectGenerator : MonoBehaviour {
             starS.OnRadiusUpdate();
             // tag
             starS.gameObject.tag = "StarSurface";
-
-            starS.generate();
+            // initialize
+            starS.Initialize();
 
             // light
             GameObject light = Instantiate(Resources.Load<GameObject>("Starlight"));
@@ -76,6 +82,8 @@ public class CelestialObjectGenerator : MonoBehaviour {
         planetS.resolution = sphereResolution;
         // material
         planetS.material = new(surfaceMaterial);
+        // Camera callback
+        planetS.setup_camera_shape_control(main_camera.transform, camera_shape_controller);
         // shape
         switch (objectType) {
             case COType.Asteroid:
@@ -100,7 +108,7 @@ public class CelestialObjectGenerator : MonoBehaviour {
         // tag
         planetS.gameObject.tag = "Surface";
         // initialize
-        planetS.generate_planet();
+        planetS.Initialize();
 
         // if object has an ocean
         if (objectType == COType.RockyWetPlanet) {
@@ -120,17 +128,12 @@ public class CelestialObjectGenerator : MonoBehaviour {
             // tag
             oceanS.gameObject.tag = "Ocean";
             // initialize
-            oceanS.generate_ocean();
+            oceanS.Initialize();
 
             // Set colors
-            oceanS.set_mesh_wave_color_mask(planetS.get_vertices(), 8);
+            // oceanS.set_mesh_wave_color_mask(planetS.get_vertices(), 8);
 
             ocean.transform.SetParent(celestial_body.transform);
         }
-
-#if UNITY_EDITOR
-        // Create editor renderer
-        var editorRenderer = surface.AddComponent<CelestialObjectEditorRenderer>();
-#endif
     }
 }

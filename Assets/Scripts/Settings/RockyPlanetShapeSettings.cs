@@ -24,6 +24,10 @@ public class RockyPlanetShapeSettings : ShapeSettings {
     // craters
     public CraterNoiseSettings craterNoise;
 
+    // Properties
+    private float continent_base => (1f - continentRatio * 2f) * continentNoise.strength + continentNoise.baseHeight;
+    private float ocean_floor(float continent_base) => continent_base - (continent_base + continentNoise.strength - continentNoise.baseHeight) * oceanDepth;
+    private float flatness_ratio => (flatness * 2f - 1f) * flatnessNoise.strength + flatnessNoise.baseHeight;
 
     // Constructors
     public override void set_settings(ShapeSettings settings_in) {
@@ -52,6 +56,43 @@ public class RockyPlanetShapeSettings : ShapeSettings {
         craterNoise.randomize_seed();
     }
 
+    protected override Vector2 noise_range() {
+        var factor = 0.25f;
+        var gn_range = factor * generalNoise.get_noise_range();
+        var mn_range = factor * mountainsNoise.get_noise_range();
+        var un_range = factor * underwaterMountainsNoise.get_noise_range();
+        var cn_range = factor * craterNoise.get_noise_range();
+
+        // Eliminate mountains for fully flat terrain
+        if (flatness == 1.0) {
+            mn_range = new();
+            un_range = new();
+        }
+
+        // On continent
+        var continent_range = mn_range + cn_range;
+
+        // On ocean floor
+        var ocean_range = new Vector2();
+        if (continentNoise.enable) {
+            var c_base = continent_base;
+            var ocean_depth = c_base - ocean_floor(c_base);
+            ocean_range = un_range - new Vector2(ocean_depth, ocean_depth);
+        }
+
+        // Combined range
+        var range = new Vector2(
+            Mathf.Min(ocean_range.x, continent_range.x),
+            Mathf.Max(ocean_range.y, continent_range.y)
+        );
+        range += gn_range;
+
+        // Account for radius
+        range = radius * (range + new Vector2(1, 1));
+
+        return range;
+    }
+
     protected override void set_additional_noise_settings() {
         // Send noise settings
         shapeComputeShader.SetInts("enabled", get_enables());
@@ -63,17 +104,11 @@ public class RockyPlanetShapeSettings : ShapeSettings {
         shapeComputeShader.SetFloats("noise_settings_crater", craterNoise.get_noise());
 
         // Set continent height
-        float cr = 1f - continentRatio * 2f;
-        float continent_base = cr * cr * cr * continentNoise.strength + continentNoise.baseHeight;
-        shapeComputeShader.SetFloat("continent_base", continent_base);
+        float c_base = continent_base;
+        shapeComputeShader.SetFloat("continent_base", c_base);
         // Set ocean depth
-        float od = oceanDepth * oceanDepth * oceanDepth;
-        float ocean_depth = continent_base - (continent_base + continentNoise.strength - continentNoise.baseHeight) * od;
-        if (continentRatio == 1f)
-            ocean_depth = continent_base - 1f;
-        shapeComputeShader.SetFloat("ocean_depth", ocean_depth);
+        shapeComputeShader.SetFloat("ocean_depth", ocean_floor(c_base));
         // Set flatness
-        float flatness_ratio = (flatness * 2f - 1f) * flatnessNoise.strength + flatnessNoise.baseHeight;
         shapeComputeShader.SetFloat("flatness_ratio", flatness_ratio);
     }
 

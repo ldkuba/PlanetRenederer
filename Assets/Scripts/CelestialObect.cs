@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[ExecuteInEditMode()]
 public abstract class CelestialObject : MonoBehaviour {
 
     // Components
@@ -23,72 +24,41 @@ public abstract class CelestialObject : MonoBehaviour {
     private ComputeBuffer normal_buffer;
     private ComputeBuffer uv_buffer;
 
-    bool initialized = false;
+    // Camera shape control
+    Transform main_camera_transform;
+    private MainCameraShapeController camera_shape_controller;
 
-#if UNITY_EDITOR
-    public void OnEditorEnable() {
-        if(!initialized)
-            generate();
+    private void OnEnable() {
+        if (mesh_filter == null) return;
+        generate_mesh(); apply_noise();
     }
-
-    public void OnEditorDisable() {
+    private void OnDisable() {
         release_buffers();
+        if (main_camera_transform != null)
+            camera_shape_controller.transform_changed -= OnCameraTransformChanged;
     }
 
-    public void EditorRebindBuffers() {
-        material.SetBuffer("position_buffer", position_buffer);
-        material.SetBuffer("normal_buffer", normal_buffer);
-        material.SetBuffer("uv_buffer", uv_buffer);
-    }
-#endif
-
-    ~CelestialObject() {
-        release_buffers();
-    }
-
-    void OnEnable() {
-       generate();
-    }
-
-    void OnDisable() {
-        release_buffers();
+    private void Update() {
+        if (transform.hasChanged) {
+            OnTransformChanged();
+            transform.hasChanged = false;
+        }
+        if (!Application.IsPlaying(gameObject)) rebind_buffers();
     }
 
     // Public Methods
-    public void generate() {
-        
-        // Delete all children meshes
-        foreach (Transform child in transform) {
-            DestroyImmediate(child.gameObject);
-        }
-
-        generate_mesh();
-        apply_noise();
-
-        initialized = true;
+    public void setup_camera_shape_control(Transform main_camera_transform, MainCameraShapeController camera_shape_controller) {
+        this.main_camera_transform = main_camera_transform;
+        this.camera_shape_controller = camera_shape_controller;
+        camera_shape_controller.transform_changed += OnCameraTransformChanged;
     }
 
-    public void OnResolutionChanged() {
-        if(!initialized) {
-            Debug.Log("Not initialized!");
-            return;
-        }
-        
-        generate();
-    }
-
-    public void OnShapeSettingsUpdated() {
-        if(!initialized) {
-            Debug.Log("Not initialized!");
-            return;
-        }
-
-        apply_noise();
-    }
-
-    public Vector3[] get_vertices() {
-        return mesh_filter.sharedMesh.vertices;
-    }
+    [ContextMenu("initialize")]
+    public void Initialize() { initialize_mesh_filter(); generate_mesh(); apply_noise(); }
+    public void OnResolutionChanged() { generate_mesh(); apply_noise(); }
+    public void OnShapeSettingsUpdated() { apply_noise(); }
+    public void OnCameraTransformChanged() { update_view_based_culling(); }
+    public void OnTransformChanged() { update_view_based_culling(); }
 
     // Private methods
     private void release_buffers() {
@@ -97,10 +67,20 @@ public abstract class CelestialObject : MonoBehaviour {
         normal_buffer?.Release();
         uv_buffer?.Release();
 
-        initialized = false;
+        // initialized = false;
+    }
+
+    private void rebind_buffers() {
+        material.SetBuffer("position_buffer", position_buffer);
+        material.SetBuffer("normal_buffer", normal_buffer);
+        material.SetBuffer("uv_buffer", uv_buffer);
     }
 
     private void initialize_mesh_filter() {
+        // Delete all children meshes
+        foreach (Transform child in transform)
+            DestroyImmediate(child.gameObject);
+
         // Create mesh object (later maybe move this into generation, if we want to have more meshes per one celestial object)
         GameObject mesh_obj = new("Mesh");
         mesh_obj.transform.parent = transform;
@@ -116,9 +96,6 @@ public abstract class CelestialObject : MonoBehaviour {
     }
 
     private void generate_mesh() {
-        // Initialize mesh filter
-        initialize_mesh_filter();
-
         // Generate unit sphere
         SphereMeshGenerator.construct_mesh(mesh_filter.sharedMesh, (uint) resolution, SphereType);
         mesh_filter.sharedMesh.RecalculateNormals();
@@ -148,7 +125,11 @@ public abstract class CelestialObject : MonoBehaviour {
         uv_buffer.SetData(uvs, 0, 0, vertex_count);
 
         // Initialize shape noise settings
-        shapeSettings.initialize(initial_pos_buffer, position_buffer, normal_buffer, vertex_count);
+        shapeSettings.initialize(transform, initial_pos_buffer, position_buffer, normal_buffer, vertex_count);
+
+        // Initialize culling
+        if (main_camera_transform != null)
+            shapeSettings.setup_view_based_culling(main_camera_transform);
 
         // Set material buffers
         material.SetBuffer("position_buffer", position_buffer);
@@ -163,12 +144,15 @@ public abstract class CelestialObject : MonoBehaviour {
     }
 
     private void apply_noise() {
-        if (shapeSettings == null) {
-            Debug.Log("Shape settings not set!");
-            return;
-        }
-
+        if (shapeSettings == null)
+            throw new UnityException("Error in :: CelestialObject :: apply_noise :: Shape settings not set!");
         shapeSettings.apply_noise();
-        // MeshF.sharedMesh.RecalculateNormals();
+    }
+
+    private void update_view_based_culling() {
+        if (main_camera_transform == null) return;
+        if (shapeSettings == null)
+            throw new UnityException("Error in :: CelestialObject :: OnCameraTransformChanged :: Shape settings not set!");
+        shapeSettings.update_view_based_culling();
     }
 }
