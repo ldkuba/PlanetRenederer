@@ -14,6 +14,7 @@ uint num_of_vertices;
 
 // Settings
 float4 shape_limits;
+float4 old_shape_limits;
 // Shape Settings
 int4 enabled[2];
 float4 noise_settings_continent_shape[3];
@@ -28,6 +29,7 @@ float ocean_depth;
 float flatness_ratio;
 
 bool vertex_is_visible(float3 vertex);
+bool vertex_was_visible(float3 vertex);
 
 // Kernels
 [numthreads(256, 1, 1)] void compute_shape(uint id
@@ -40,6 +42,8 @@ bool vertex_is_visible(float3 vertex);
     out_vertices[id] = float3(0, 0, 0);
     return;
   }
+  if (vertex_was_visible(vertices[id]))
+    return;
 
   // Compute new position
   out_vertices[id] = apply_noise(vertices[id]);
@@ -52,6 +56,12 @@ bool vertex_is_visible(float3 vertex);
 bool vertex_is_visible(float3 vertex) {
   float3 camera_dir = shape_limits.xyz;
   float max_render_angle = shape_limits.w;
+  return dot(vertex, camera_dir) >= max_render_angle;
+}
+
+bool vertex_was_visible(float3 vertex) {
+  float3 camera_dir = old_shape_limits.xyz;
+  float max_render_angle = old_shape_limits.w;
   return dot(vertex, camera_dir) >= max_render_angle;
 }
 
@@ -102,10 +112,11 @@ float3 apply_noise(float3 position) {
   // both //
   // bumps
   float bumbs = general_noise_enabled * //
-              fractal_noise(position, noise_settings_both);
+                fractal_noise(position, noise_settings_both);
 
   // Final height
-  float height = 1 + (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
+  float height =
+      1 + (c_base + smax(ridge_1, ridge_2, 8.0) + crater + bumbs) / 4;
 
   return position * height;
 }

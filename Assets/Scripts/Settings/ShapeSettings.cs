@@ -192,6 +192,7 @@ public class ShapeSettings : ScriptableObject {
     protected bool view_based_culling = false;
     protected Transform camera_t;
     protected Transform shape_t;
+    private float[] last_shape_limits = new float[] { 0, 0, 0, 0 };
 
     public virtual void set_settings(ShapeSettings settings) {
         shapeComputeShader = settings.shapeComputeShader;
@@ -200,6 +201,7 @@ public class ShapeSettings : ScriptableObject {
     public virtual void randomize_seed() { }
 
     public virtual void initialize(
+        Transform shape_transform,
         ComputeBuffer initial_position_buffer,
         ComputeBuffer position_buffer,
         ComputeBuffer normal_buffer,
@@ -209,6 +211,9 @@ public class ShapeSettings : ScriptableObject {
             throw new UnityException("Error in :: ShapeSettings :: initialize :: Compute shader not set.");
         if (initial_position_buffer.count < position_buffer.count)
             throw new UnityException("Error in :: ShapeSettings :: initialize :: Initial position buffer incompatible with the current one.");
+
+        // Needs reference to parent transform
+        shape_t = shape_transform;
 
         // Here we will setup compute shader
         // First we need to find kernel
@@ -228,10 +233,17 @@ public class ShapeSettings : ScriptableObject {
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);
     }
 
-    public void setup_view_based_culling(Transform shape_transform, Transform camera_transform) {
+    public void setup_view_based_culling(Transform camera_transform) {
         view_based_culling = true;
         camera_t = camera_transform;
-        shape_t = shape_transform;
+    }
+
+    public void update_view_based_culling() {
+        // Set noise settings
+        set_noise_settings(true);
+
+        // run
+        shapeComputeShader.Dispatch(shader_kernel_id, (int) thread_x, (int) thread_y, (int) thread_z);
     }
 
     private void set_core_noise_settings() {
@@ -248,7 +260,7 @@ public class ShapeSettings : ScriptableObject {
     }
     protected virtual void set_additional_noise_settings() { }
 
-    public void apply_noise() {
+    private void set_noise_settings(bool is_position_update = false) {
         // Check validity
         if (shapeComputeShader == null)
             throw new UnityException("Error in :: ShapeSettings :: apply_noise :: Compute shader not set.");
@@ -258,20 +270,27 @@ public class ShapeSettings : ScriptableObject {
         set_additional_noise_settings();
 
         // Set culling if enabled
-        set_culling_info();
+        set_culling_info(is_position_update);
+    }
+
+    public void apply_noise() {
+        // Set noise settings
+        set_noise_settings();
 
         // run
         shapeComputeShader.Dispatch(shader_kernel_id, (int) thread_x, (int) thread_y, (int) thread_z);
     }
 
+
     protected virtual Vector2 noise_range() {
         return new Vector2(radius, radius);
     }
 
-    private void set_culling_info() {
+    private void set_culling_info(bool upload_last_shape_limits) {
         if (!view_based_culling) {
             // Render everything
             shapeComputeShader.SetFloats("shape_limits", new float[] { 0, 0, 0, 0 });
+            shapeComputeShader.SetFloats("old_shape_limits", new float[] { 0, 0, 0, 1 });
             return;
         }
 
@@ -291,6 +310,7 @@ public class ShapeSettings : ScriptableObject {
         if (camera_dist < min_r) {
             // Render nothing
             shapeComputeShader.SetFloats("shape_limits", new float[] { 0, 0, 0, 1 });
+            shapeComputeShader.SetFloats("old_shape_limits", new float[] { 0, 0, 0, 0 });
             return;
         }
 
@@ -298,13 +318,15 @@ public class ShapeSettings : ScriptableObject {
         var to_circle_dir = compute_camera_to_circle_dir(camera_t.position, -to_camera, min_r);
         var max_render_angle = compute_dot_product_limit(camera_t.position, to_circle_dir, shape_t.position, max_r);
 
+        // Send last shape limit info to compute shader
+        if (upload_last_shape_limits)
+            shapeComputeShader.SetFloats("old_shape_limits", last_shape_limits);
+        else
+            shapeComputeShader.SetFloats("old_shape_limits", new float[] { 0, 0, 0, 1 });
+
         // Send this info to compute shader
-        shapeComputeShader.SetFloats("shape_limits", new float[] {
-            camera_dir.x,
-            camera_dir.y,
-            camera_dir.z,
-            max_render_angle
-        });
+        last_shape_limits = new float[] { camera_dir.x, camera_dir.y, camera_dir.z, max_render_angle };
+        shapeComputeShader.SetFloats("shape_limits", last_shape_limits);
     }
 
     private Vector3 compute_camera_to_circle_dir(Vector3 camera_position, Vector3 to_center, float sphere_r) {

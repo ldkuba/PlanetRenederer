@@ -58,8 +58,7 @@ public class CelestialObjectEditor : Editor {
 
         if (CO == null)
             CO = (CelestialObject) target;
-        if (CO_serialized == null)
-            CO_serialized = new SerializedObject(CO);
+        CO_serialized ??= new SerializedObject(CO);
 
         draw_settings_editor(ref shape_editor, CO.shapeSettings, CO.OnResolutionChanged, CO.OnShapeSettingsUpdated);
     }

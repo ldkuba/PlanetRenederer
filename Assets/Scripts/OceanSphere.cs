@@ -4,13 +4,6 @@ using UnityEngine;
 
 public class OceanSphere : CelestialObject {
 
-    [ContextMenu("generate")]
-    public void generate_ocean() {
-        initialize();
-        OnResolutionChanged();
-        OnShapeSettingsUpdated();
-    }
-
     public void set_mesh_wave_color_mask(Vector3[] vertices, float max_depth) {
         Color[] colors = new Color[vertices.Length];
 
