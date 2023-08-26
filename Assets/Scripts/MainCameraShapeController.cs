@@ -7,7 +7,6 @@ public class MainCameraShapeController : MonoBehaviour {
     public delegate void TransformChangedH();
     public event TransformChangedH transform_changed;
 
-
     // Update is called once per frame
     void Update() {
         if (transform.hasChanged) {

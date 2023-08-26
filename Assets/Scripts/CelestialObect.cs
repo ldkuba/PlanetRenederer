@@ -31,6 +31,8 @@ public abstract class CelestialObject : MonoBehaviour {
     private void OnEnable() {
         if (mesh_filter == null) return;
         generate_mesh(); apply_noise();
+        if (main_camera_transform != null)
+            camera_shape_controller.transform_changed += OnCameraTransformChanged;
     }
     private void OnDisable() {
         release_buffers();
