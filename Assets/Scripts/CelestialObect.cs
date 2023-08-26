@@ -5,6 +5,7 @@ using UnityEngine;
 
 [ExecuteInEditMode()]
 public abstract class CelestialObject : MonoBehaviour {
+
     // Components
     public ShapeSettings shapeSettings;
     [SerializeField, HideInInspector]
@@ -27,11 +28,12 @@ public abstract class CelestialObject : MonoBehaviour {
     Transform main_camera_transform;
     private MainCameraShapeController camera_shape_controller;
 
-    void OnDestroy() {
-        initial_pos_buffer?.Release();
-        position_buffer?.Release();
-        normal_buffer?.Release();
-        uv_buffer?.Release();
+    private void OnEnable() {
+        if (mesh_filter == null) return;
+        generate_mesh(); apply_noise();
+    }
+    private void OnDisable() {
+        release_buffers();
         if (main_camera_transform != null)
             camera_shape_controller.transform_changed -= OnCameraTransformChanged;
     }
@@ -41,15 +43,16 @@ public abstract class CelestialObject : MonoBehaviour {
             OnTransformChanged();
             transform.hasChanged = false;
         }
+        if (!Application.IsPlaying(gameObject)) rebind_buffers();
     }
 
+    // Public Methods
     public void setup_camera_shape_control(Transform main_camera_transform, MainCameraShapeController camera_shape_controller) {
         this.main_camera_transform = main_camera_transform;
         this.camera_shape_controller = camera_shape_controller;
         camera_shape_controller.transform_changed += OnCameraTransformChanged;
     }
 
-    // Public Methods
     [ContextMenu("initialize")]
     public void Initialize() { initialize_mesh_filter(); generate_mesh(); apply_noise(); }
     public void OnResolutionChanged() { generate_mesh(); apply_noise(); }
@@ -58,12 +61,27 @@ public abstract class CelestialObject : MonoBehaviour {
     public void OnTransformChanged() { update_view_based_culling(); }
 
     // Private methods
-    private void initialize_mesh_filter() {
-        // clear all sub meshes
-        for (int i = transform.childCount - 1; i >= 0; i--)
-            DestroyImmediate(transform.GetChild(i).gameObject);
+    private void release_buffers() {
+        initial_pos_buffer?.Release();
+        position_buffer?.Release();
+        normal_buffer?.Release();
+        uv_buffer?.Release();
 
-        // initialize mesh filter
+        // initialized = false;
+    }
+
+    private void rebind_buffers() {
+        material.SetBuffer("position_buffer", position_buffer);
+        material.SetBuffer("normal_buffer", normal_buffer);
+        material.SetBuffer("uv_buffer", uv_buffer);
+    }
+
+    private void initialize_mesh_filter() {
+        // Delete all children meshes
+        foreach (Transform child in transform)
+            DestroyImmediate(child.gameObject);
+
+        // Create mesh object (later maybe move this into generation, if we want to have more meshes per one celestial object)
         GameObject mesh_obj = new("Mesh");
         mesh_obj.transform.parent = transform;
         mesh_obj.transform.localPosition = Vector3.zero;
@@ -95,10 +113,10 @@ public abstract class CelestialObject : MonoBehaviour {
         var old_uv_buffer = uv_buffer;
 
         // Initialize buffers
-        initial_pos_buffer = new(vertex_count, 3 * sizeof(float));
-        position_buffer = new(vertex_count, 3 * sizeof(float));
-        normal_buffer = new(vertex_count, 3 * sizeof(float));
-        uv_buffer = new(vertex_count, 2 * sizeof(float));
+        initial_pos_buffer = new ComputeBuffer(vertex_count, 3 * sizeof(float));
+        position_buffer = new ComputeBuffer(vertex_count, 3 * sizeof(float));
+        normal_buffer = new ComputeBuffer(vertex_count, 3 * sizeof(float));
+        uv_buffer = new ComputeBuffer(vertex_count, 2 * sizeof(float));
 
         // Set initial buffer data
         initial_pos_buffer.SetData(positions, 0, 0, vertex_count);
