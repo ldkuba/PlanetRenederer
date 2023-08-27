@@ -2,6 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Unity.VisualScripting.Dependencies.NCalc;
 
 public class CubeSphereMesh {
     public static SphereMesh construct_mesh(uint resolution) {
@@ -19,20 +20,6 @@ public class CubeSphereMesh {
 
         return cube_sphere;
     }
-
-    internal struct MeshSquare {
-        public float top;
-        public float bottom;
-        public float left;
-        public float right;
-
-        public MeshSquare(float top = 0f, float bottom = 0f, float left = 0f, float right = 0f) {
-            this.top = top;
-            this.bottom = bottom;
-            this.left = left;
-            this.right = right;
-        }
-    };
 
     // Private functions
     private static SphereMesh construct_cube(uint resolution) {
@@ -58,7 +45,7 @@ public class CubeSphereMesh {
             (a, b) => { return new( b,  a, -1); }
         };
 
-        // Keep track of unique vertices
+        // Keep track of unique vertices; Only used for edges
         Dictionary<Vector3, int> unique_edge_vertices = new();
 
 
@@ -94,23 +81,55 @@ public class CubeSphereMesh {
                 }
             }
 
-            // Iterate and add all indices
-            for (int i = 0; i < resolution - 1; i++) {
-                for (int j = 0; j < resolution - 1; j++) {
-                    // Get quad
-                    int i1 = side_indices[i + 0, j + 0]; // Bottom left
-                    int i2 = side_indices[i + 0, j + 1]; // Bottom right
-                    int i3 = side_indices[i + 1, j + 0]; // Top left
-                    int i4 = side_indices[i + 1, j + 1]; // Top right
+            // Callback for adding triangles in index list, per quad
+            // (i, j) -> quad corner
+            // (i + p, j + q) -> opposite quad corner
+            void add_quad(int i, int j, int p, int q) {
+                // Get quad
+                int i1 = side_indices[i + 0, j + 0]; // Bottom left
+                int i2 = side_indices[i + 0, j + q]; // Bottom right
+                int i3 = side_indices[i + p, j + 0]; // Top left
+                int i4 = side_indices[i + p, j + q]; // Top right
 
-                    // Add indices
-                    indices[i_index++] = i1;
-                    indices[i_index++] = i3;
-                    indices[i_index++] = i2;
-                    indices[i_index++] = i2;
-                    indices[i_index++] = i3;
-                    indices[i_index++] = i4;
+                // This makes sure that triangle are oriented CCW
+                if (p * q < 0)
+                    (i3, i2) = (i2, i3);
+
+                // Add indices
+                indices[i_index++] = i1;
+                indices[i_index++] = i3;
+                indices[i_index++] = i4;
+                indices[i_index++] = i2;
+                indices[i_index++] = i1;
+                indices[i_index++] = i4;
+            }
+
+            // Iterate and add all indices
+            // We start from corners and move slowly to the middle
+            uint half_point = (resolution % 2 == 1) ? resolution / 2 : resolution / 2 - 1;
+            for (int i = 0; i < half_point; i++) {
+                int inv_i = (int) resolution - i - 1;
+                for (int j = 0; j < half_point; j++) {
+                    int inv_j = (int) resolution - j - 1;
+                    add_quad(i, j, 1, 1);
+                    add_quad(i, inv_j, 1, -1);
+                    add_quad(inv_i, j, -1, 1);
+                    add_quad(inv_i, inv_j, -1, -1);
                 }
+            }
+
+            // If resolution is even (odd quad count per side) we need additional code for enclosing central hole (1 quad wide)
+            if (resolution % 2 == 0) {
+                int h = (int) half_point;
+                int inv_h = h + 1;
+                for (int k = 0; k < half_point; k++) {
+                    int inv_k = (int) resolution - k - 1;
+                    add_quad(h, k, 1, 1);
+                    add_quad(k, h, 1, 1);
+                    add_quad(inv_h, inv_k, -1, -1);
+                    add_quad(inv_k, inv_h, -1, -1);
+                }
+                add_quad(h, h, 1, 1);
             }
         }
 

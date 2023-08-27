@@ -11,7 +11,7 @@ float3 compute_triangle_normal(float3 up, float3 p1, float3 p2, float3 p3);
 
 float3 compute_normal(float3 up, float3 p0, float diff_angle) {
   // Compute rotation axis
-  float3 other_vec = (up.x > 0.9) ? float3(0, 1, 0) : float3(1, 0, 0);
+  float3 other_vec = (abs(up.x) > 0.9) ? float3(0, 1, 0) : float3(1, 0, 0);
   float3 rot_axis_1 = normalize(cross(up, other_vec));
   float3 rot_axis_2 = normalize(cross(up, rot_axis_1));
 

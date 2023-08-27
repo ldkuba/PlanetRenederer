@@ -344,7 +344,7 @@ public class ShapeSettings : ScriptableObject {
 
         // Compute a vector colinear with the circle plane
         var to_center_dir = to_center.normalized;
-        var other_vec = (to_center_dir.x > 0.9) ? new Vector3(0, 1, 0) : new Vector3(1, 0, 0);
+        var other_vec = (Mathf.Abs(to_center_dir.x) > 0.9) ? new Vector3(0, 1, 0) : new Vector3(1, 0, 0);
         var circle_v = Vector3.Cross(to_center_dir, other_vec).normalized;
 
         // Get coords of a point on a tangent circle
