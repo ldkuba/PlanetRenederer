@@ -4,13 +4,133 @@
 #include "./Includes/SmoothMinMax.cginc"
 
 // Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel lod_kernel
 #pragma kernel compute_shape
+#pragma kernel compute_shape_tiled
 
 // Vertex information
-StructuredBuffer<float3> vertices;
+RWStructuredBuffer<float3> vertices;
 RWStructuredBuffer<float3> out_vertices;
 RWStructuredBuffer<float3> normals;
 uint num_of_vertices;
+int num_tiles;
+
+// ============ LOD KERNEL ============
+
+// Node decoding
+uint undilate(uint x) {
+    x = (x | (x >> 1u)) & 0x33333333;
+    x = (x | (x >> 2u)) & 0x0f0f0f0f;
+    x = (x | (x >> 4u)) & 0x00ff00ff;
+    x = (x | (x >> 8u)) & 0x0000ffff;
+    return x & 0x0000ffff;
+}
+
+void decode(in uint node_code, out uint level, out uint2 coords) {
+    level = node_code & 0xf;
+    coords.x = undilate((node_code >> 4u) & 0x05555555);
+    coords.y = undilate((node_code >> 5u) & 0x05555555);
+}
+
+struct LodLayoutChanges {
+  uint new_node_code;
+  uint offset; // tile chunk number offset from face start
+  int face_number; // face offset
+};
+
+static const float3 node_centers[6] = {
+  float3(0.0, 0.0, 1.0),  // Back
+  float3(0.0, 0.0, -1.0), // Front
+  float3(0.0, 1.0, 0.0),  // Top
+  float3(0.0, -1.0, 0.0), // Bottom
+  float3(1.0, 0.0, 0.0),  // Right
+  float3(-1.0, 0.0, 0.0)  // Left
+};
+
+// Lod layout - specifies which node (uint code) each chunk in the position buffer belongs to
+//RWStructuredBuffer<uint> lod_layout;
+
+// Lod changes
+StructuredBuffer<LodLayoutChanges> lod_layout_changes;
+
+int MAX_NUM_NODES; // 3 * max_level + 1
+
+float sphere_radius;
+uint index_count_per_instance;
+uint num_changes;
+
+float3 calculate_sphere_position(uint level, uint2 coords, int vertex_id, float3 face_center);
+
+[numthreads(256,1,1)]
+void lod_kernel(uint id : SV_DispatchThreadID) {
+  if(id >= num_changes * num_of_vertices)
+    return;
+
+  int change_id = id / num_of_vertices;
+  int vertex_id = id % num_of_vertices;
+
+  LodLayoutChanges change = lod_layout_changes[change_id];
+
+  // Recalculate new vertices
+  // Decode node 
+  uint2 coords;
+  uint level;
+  decode(change.new_node_code, level, coords);
+  
+  uint vertex_buffer_index = change.face_number * MAX_NUM_NODES * num_of_vertices + change.offset * num_of_vertices + vertex_id;
+
+  // calculate position on sphere
+  float3 initial_position = calculate_sphere_position(level, coords, vertex_id, node_centers[change.face_number]);
+  vertices[vertex_buffer_index] = initial_position;
+}
+
+float3 map_point_to_sphere(float3 p) {
+    float x_sq = p.x * p.x;
+    float y_sq = p.y * p.y;
+    float z_sq = p.z * p.z;
+
+    p.x *= sqrt(1.0 - y_sq / 2.0 - z_sq / 2.0 + y_sq * z_sq / 3.0);
+    p.y *= sqrt(1.0 - z_sq / 2.0 - x_sq / 2.0 + z_sq * x_sq / 3.0);
+    p.z *= sqrt(1.0 - x_sq / 2.0 - y_sq / 2.0 + x_sq * y_sq / 3.0);
+    
+    return p;
+}
+
+float3 calculate_sphere_position(uint level, uint2 coords, int vertex_id, float3 face_center) {
+  // Get vertex position on -1 to 1 grid
+  uint resolution = sqrt(num_of_vertices);
+  uint two_to_level = 1 << level;
+  uint vertex_id_x = vertex_id % resolution;
+  uint vertex_id_y = vertex_id / resolution;
+
+  if(face_center.x < 0.0 || face_center.y < 0.0 || face_center.z > 0.0) {
+    // left, bottom or back face
+    //vertex_id_x = resolution - 1 - vertex_id_x;
+  }
+
+  float tile_offset_x = -1.0 + 2.0 * (float)coords.x / (float)two_to_level;
+  float tile_offset_y = -1.0 + 2.0 * (float)coords.y / (float)two_to_level;
+  float vertex_x = tile_offset_x + 2.0 * vertex_id_x / ((float)two_to_level * (resolution - 1));
+  float vertex_y = tile_offset_y + 2.0 * vertex_id_y / ((float)two_to_level * (resolution - 1));
+
+  // Get center on unit cube
+  float3 child_center_unit_cube;
+  if(face_center.x != 0.0f) {
+      // Right or left face
+      child_center_unit_cube = float3(face_center.x, vertex_y, vertex_x * face_center.x);
+  } else if(face_center.y != 0.0f) {
+      // Top or bottom face
+      child_center_unit_cube = float3(vertex_x * face_center.y, face_center.y, vertex_y);
+  } else if(face_center.z != 0.0f) {
+      // Front or back face
+      child_center_unit_cube = float3(vertex_x * -face_center.z, vertex_y, face_center.z);
+  }
+
+  // map to sphere
+  return normalize(map_point_to_sphere(child_center_unit_cube));
+}
+
+// ============ NOISE KERNEL ============
 
 // Settings
 float4 shape_limits;
@@ -32,8 +152,8 @@ bool vertex_is_visible(float3 vertex);
 bool vertex_was_visible(float3 vertex);
 
 // Kernels
-[numthreads(256, 1, 1)] void compute_shape(uint id
-                                           : SV_DispatchThreadID) {
+[numthreads(256, 1, 1)] 
+void compute_shape(uint id : SV_DispatchThreadID) {
   if (id >= num_of_vertices)
     return;
 
@@ -51,6 +171,50 @@ bool vertex_was_visible(float3 vertex);
   // Compute surface normal
   float diff_angle = 1.0 / sqrt(num_of_vertices / 6.0);
   normals[id] = compute_normal(vertices[id], out_vertices[id], diff_angle);
+}
+
+struct LodBufferLayoutData {
+  uint node_code;
+  uint position;
+  uint face_id;
+  uint edge_smoothing_flags;
+};
+
+StructuredBuffer<LodBufferLayoutData> lod_layout;
+
+[numthreads(256, 1, 1)] 
+void compute_shape_tiled(uint id : SV_DispatchThreadID) {
+  if(id >= num_tiles * num_of_vertices)
+    return;
+
+  // Buffer indices
+  uint tile_id = id / num_of_vertices;
+  uint vertex_id = id % num_of_vertices;
+
+  LodBufferLayoutData tile_data = lod_layout[tile_id];
+
+  uint face_index = tile_data.face_id * MAX_NUM_NODES * num_of_vertices;
+  uint tile_index = face_index + tile_data.position * num_of_vertices;
+  uint vertex_index = tile_index + vertex_id;
+
+  // Decode tile
+  uint2 coords;
+  uint level;
+  decode(tile_data.node_code, level, coords);
+
+  // Check for visibility
+  if (!vertex_is_visible(vertices[vertex_index])) {
+    out_vertices[vertex_index] = float3(0, 0, 0);
+    return;
+  }
+  //  if (vertex_was_visible(vertices[vertex_index]))
+  //    return;
+
+  out_vertices[vertex_index] = apply_noise(vertices[vertex_index]);
+
+  // Compute surface normal
+  float diff_angle = 1.0 / sqrt(pow(4, level) * num_of_vertices);
+  normals[vertex_index] = compute_normal(vertices[vertex_index], out_vertices[vertex_index], diff_angle);
 }
 
 bool vertex_is_visible(float3 vertex) {

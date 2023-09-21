@@ -28,10 +28,20 @@ public class CelestialObjectEditor : Editor {
                 min_resolution = 2;
                 max_resolution = 1000;
                 break;
+            case SphereMeshGenerator.SphereType.Tile:
+                min_resolution = 2;
+                max_resolution = 50;
+                break;
         }
 
         SerializedProperty resolution_property = CO_serialized.FindProperty("resolution");
         EditorGUILayout.IntSlider(resolution_property, min_resolution, max_resolution);
+
+        // Resolution has to be an odd number in tiled mode
+        if(CO.SphereType == SphereMeshGenerator.SphereType.Tile) {
+            if(resolution_property.intValue % 2 == 0)
+                resolution_property.intValue++;
+        }
 
         if (resolution_property.intValue != CO.resolution) {
             CO.resolution = resolution_property.intValue;
