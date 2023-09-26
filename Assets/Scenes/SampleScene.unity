@@ -304,7 +304,7 @@ Transform:
   m_GameObject: {fileID: 963194225}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 22, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -356,7 +356,7 @@ MonoBehaviour:
   defaultRockyPlanetDryShapeSettings: {fileID: 11400000, guid: a1d71c1611fd03048968c0148fde601c, type: 2}
   defaultRockyPlanetWetShapeSettings: {fileID: 0}
   defaultOceanShapeSettings: {fileID: 0}
-  surfaceMaterial: {fileID: 2100000, guid: d96cf7cc5257cf3458569d96c3548e66, type: 2}
+  surfaceMaterial: {fileID: 2100000, guid: 9c6e0d30b89fff941a5e2086d628c9b1, type: 2}
   oceanMaterial: {fileID: 0}
   starMaterial: {fileID: 0}
   defaultSurfaceMaterialSettings: {fileID: 11400000, guid: 76215ff3dbcff9d4a8d3da527ae0c804, type: 2}
@@ -364,7 +364,7 @@ MonoBehaviour:
   objectType: 2
   objectRadius: 10
   sphereType: 2
-  sphereResolution: 11
+  sphereResolution: 25
 --- !u!4 &1708308205
 Transform:
   m_ObjectHideFlags: 0
