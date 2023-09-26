@@ -191,6 +191,7 @@ public class ShapeSettings : ScriptableObject {
     private ComputeBuffer initial_position_buffer;
     private ComputeBuffer position_buffer;
     private ComputeBuffer normal_buffer;
+    private ComputeBuffer biome_buffer;
     private int vertex_count;
 
     // Outside context
@@ -218,6 +219,7 @@ public class ShapeSettings : ScriptableObject {
         ComputeBuffer initial_position_buffer,
         ComputeBuffer position_buffer,
         ComputeBuffer normal_buffer,
+        ComputeBuffer biome_buffer,
         int vertex_count,                   // if isInstancedMesh is true, this is the number of vertices per tile
         bool isInstancedMesh,               // if true object is rendered using instanced tiles
         uint index_count_per_instance       // if isInstancedMesh is true, this is the number of indices per tile
@@ -236,6 +238,7 @@ public class ShapeSettings : ScriptableObject {
         this.initial_position_buffer = initial_position_buffer;
         this.position_buffer = position_buffer;
         this.normal_buffer = normal_buffer;
+        this.biome_buffer = biome_buffer;
         this.vertex_count = vertex_count;
 
         if(isInstancedMesh) {
@@ -286,6 +289,7 @@ public class ShapeSettings : ScriptableObject {
         shapeComputeShader.SetBuffer(kernel_id, "vertices", initial_position_buffer);
         shapeComputeShader.SetBuffer(kernel_id, "out_vertices", position_buffer);
         shapeComputeShader.SetBuffer(kernel_id, "normals", normal_buffer);
+        shapeComputeShader.SetBuffer(kernel_id, "biomes", biome_buffer);
 
         // Set number of vertices
         shapeComputeShader.SetInt("num_of_vertices", vertex_count);

@@ -30,6 +30,7 @@ public class COGenEditor : Editor {
                 break;
         }
 
+
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Sphere generation");
         EditorGUILayout.PropertyField(COG_serialized.FindProperty("sphereType"));
@@ -43,7 +44,7 @@ public class COGenEditor : Editor {
                 break;
             case SphereMeshGenerator.SphereType.Cube:
                 min_resolution = 2;
-                max_resolution = 1000;
+                max_resolution = 1500;
                 break;
             case SphereMeshGenerator.SphereType.Tile:
                 min_resolution = 2;
@@ -56,6 +57,7 @@ public class COGenEditor : Editor {
 
         EditorGUILayout.PropertyField(COG_serialized.FindProperty("objectRadius"), new("Radius"), true);
 
+        // Material
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Materials Used");
         if (COG.objectType == CelestialObjectGenerator.COType.GasPlanet) {
@@ -66,6 +68,7 @@ public class COGenEditor : Editor {
             if (COG.objectType == CelestialObjectGenerator.COType.RockyWetPlanet)
                 EditorGUILayout.PropertyField(COG_serialized.FindProperty("oceanMaterial"), true);
         }
+        EditorGUILayout.PropertyField(COG_serialized.FindProperty("defaultSurfaceMaterialSettings"), true);
 
         GUILayout.Space(10);
         EditorGUILayout.LabelField("Object Settings");
