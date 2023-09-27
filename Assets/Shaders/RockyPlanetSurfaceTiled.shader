@@ -110,8 +110,8 @@ Shader "RockyPlanetSurfaceTiled"
 
 			bool is_left_smooth = vertex_x == 0 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_LEFT) != 0);
 			bool is_right_smooth = vertex_x == resolution - 1 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_RIGHT) != 0);
-			bool is_top_smooth = vertex_y == 0 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_TOP) != 0);
-			bool is_bottom_smooth = vertex_y == resolution - 1 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_BOTTOM) != 0);
+			bool is_top_smooth = vertex_y == resolution - 1 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_TOP) != 0);
+			bool is_bottom_smooth = vertex_y == 0 && ((lod_layout[tile_index].edge_smoothing_flags & EDGE_SMOOTHING_BOTTOM) != 0);
 
 			if(is_left_smooth || is_right_smooth) {
 				// left edge vertex
@@ -165,8 +165,8 @@ Shader "RockyPlanetSurfaceTiled"
 			v.vertex.xyz = mul(_ObjectToWorld, position).xyz;
 			v.normal = normalize(mul((float3x3)_ObjectToWorld, normal));
 
-			data.local_coord = v.vertex.xyz;
-			data.local_normal = v.normal;
+			data.local_coord = position;
+			data.local_normal = normal;
 			
 			uint biome = get_biome(biome_buffer, vertex_index);
 			set_biome_input(biome, data);

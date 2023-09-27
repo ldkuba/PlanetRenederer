@@ -35,6 +35,7 @@ public abstract class CelestialObject : MonoBehaviour
 
     private bool apply_noise_flag = false;
     private bool update_view_based_culling_flag = false;
+    private bool set_material_info_flag = false;
 
     // Camera shape control
     Camera main_camera;
@@ -42,8 +43,18 @@ public abstract class CelestialObject : MonoBehaviour
 
     private void OnEnable()
     {
-        if (mesh_filter == null) return;
+        if (mesh_filter == null && SphereType != SphereMeshGenerator.SphereType.Tile) return;
         generate_mesh();
+
+        if(main_camera == null) {
+            GameObject main_camera_obj = GameObject.FindGameObjectWithTag("MainCamera");
+            if(main_camera_obj != null) {
+                main_camera = main_camera_obj.GetComponent<Camera>();
+                camera_shape_controller = main_camera_obj.GetComponent<MainCameraShapeController>();
+            }
+        }
+
+        rebind_buffers();
 
         // // Noise applied automatically when lod kernel runs first time
         // if(SphereType != SphereMeshGenerator.SphereType.Tile)
@@ -51,6 +62,7 @@ public abstract class CelestialObject : MonoBehaviour
         if (main_camera != null)
             camera_shape_controller.transform_changed += OnCameraTransformChanged;
     }
+
     private void OnDisable()
     {
         release_buffers();
@@ -77,6 +89,10 @@ public abstract class CelestialObject : MonoBehaviour
             }
         }
 
+        if(set_material_info_flag) {
+            set_surface_material_info();
+        }
+
         if(update_view_based_culling_flag) {
             update_view_based_culling();
         } else if(apply_noise_flag) {
@@ -85,6 +101,7 @@ public abstract class CelestialObject : MonoBehaviour
 
         update_view_based_culling_flag = false;
         apply_noise_flag = false;
+        set_material_info_flag = false;
 
         if(SphereType == SphereMeshGenerator.SphereType.Tile) {
             // Render instanced
@@ -129,7 +146,7 @@ public abstract class CelestialObject : MonoBehaviour
     public void OnShapeSettingsUpdated() { apply_noise_flag = true; }
     public void OnCameraTransformChanged() { update_view_based_culling_flag = true; }
     public void OnTransformChanged() { update_view_based_culling_flag = true; }
-    public void OnSurfaceMaterialInfoChanged() { set_surface_material_info(); }
+    public void OnSurfaceMaterialInfoChanged() { set_material_info_flag = true; }
 
     // Private methods
     private void release_buffers()
@@ -147,6 +164,8 @@ public abstract class CelestialObject : MonoBehaviour
         material.SetBuffer("normal_buffer", normal_buffer);
         material.SetBuffer("biome_buffer", biome_buffer);
         material.SetBuffer("uv_buffer", uv_buffer);
+
+        set_surface_material_info();
     }
 
     private void set_surface_material_info()
@@ -256,7 +275,7 @@ public abstract class CelestialObject : MonoBehaviour
         old_uv_buffer?.Release();
 
         // Set surface material info
-        set_surface_material_info();
+        set_material_info_flag = true;
     }
 
     private void apply_noise()
