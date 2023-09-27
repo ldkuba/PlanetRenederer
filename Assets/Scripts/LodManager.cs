@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Xml.Serialization;
 using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
@@ -248,7 +247,7 @@ public class LodBufferLayout {
 public class LodManager {
 
     public static readonly int NUM_QUAD_TREES = 6;
-    public static readonly float LOD_DISTANCE_SCALE = 4.0f;
+    public static readonly float LOD_DISTANCE_SCALE = 8.0f;
     private static readonly float ROOT_NODE_SPLIT_DISTANCE = Vector3.Distance(
         new Vector3(1.0f, 0.0f, 0.0f),
         new Vector3(1.0f, 1.0f, 1.0f).normalized

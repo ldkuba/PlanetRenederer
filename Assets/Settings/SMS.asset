@@ -13,21 +13,21 @@ MonoBehaviour:
   m_Name: SMS
   m_EditorClassIdentifier: 
   biomeMaterial:
-  - mapDiffuse: {fileID: 2800000, guid: f75a9ce17d76b4cb4b52da3f774ede27, type: 3}
-    mapNormal: {fileID: 2800000, guid: 121bffe0070fd47ce9362988d7beed39, type: 3}
-    mapOcclusion: {fileID: 2800000, guid: b70578b0c62b74494a9f9e4e8d29d48a, type: 3}
+  - mapDiffuse: {fileID: 2800000, guid: 7bb4d5e8ca69c8e4db3e0f65a1cf5f16, type: 3}
+    mapNormal: {fileID: 2800000, guid: 2db98fb376fa23b438fc0f8a1b1fdffd, type: 3}
+    mapOcclusion: {fileID: 2800000, guid: 8c476a8befda4d84093caef1946c4649, type: 3}
     normalStrength: 1
     occlusionStrength: 1
-    scale: 4.69
+    scale: 100
     metallic: 0
-    glossiness: 0.77
-    color: {r: 0.3846666, g: 1, b: 0.29000002, a: 0}
-  - mapDiffuse: {fileID: 2800000, guid: 0c2641f16f0c74dc8bd65cc0f24b03df, type: 3}
-    mapNormal: {fileID: 2800000, guid: 912fe0350b83a4934aa3799ef6fced00, type: 3}
-    mapOcclusion: {fileID: 2800000, guid: c8fd564835bc6474c84c6798e7d7e2b5, type: 3}
+    glossiness: 0.172
+    color: {r: 1, g: 1, b: 1, a: 0}
+  - mapDiffuse: {fileID: 2800000, guid: ea900f36b145c66458c5618930a44860, type: 3}
+    mapNormal: {fileID: 2800000, guid: e8ebcad1ee3f2be4cbd98f81b08ef446, type: 3}
+    mapOcclusion: {fileID: 2800000, guid: c85fd3ea3fe570744bc98c198588daf1, type: 3}
     normalStrength: 2
     occlusionStrength: 1
-    scale: 2.72
+    scale: 100
     metallic: 0.564
     glossiness: 0.213
     color: {r: 1, g: 1, b: 1, a: 0}
@@ -38,7 +38,7 @@ MonoBehaviour:
     occlusionStrength: 0
     scale: 0
     metallic: 0
-    glossiness: 0
+    glossiness: 0.517
     color: {r: 0, g: 0.07769104, b: 0.6415094, a: 0}
   - mapDiffuse: {fileID: 0}
     mapNormal: {fileID: 0}
@@ -47,7 +47,7 @@ MonoBehaviour:
     occlusionStrength: 0
     scale: 0
     metallic: 0
-    glossiness: 0
+    glossiness: 0.517
     color: {r: 0.062566735, g: 0.60992455, b: 0.6981132, a: 0}
   - mapDiffuse: {fileID: 0}
     mapNormal: {fileID: 0}
@@ -56,17 +56,17 @@ MonoBehaviour:
     occlusionStrength: 0
     scale: 0
     metallic: 0
-    glossiness: 0
-    color: {r: 0, g: 0, b: 0, a: 0}
-  - mapDiffuse: {fileID: 0}
-    mapNormal: {fileID: 0}
-    mapOcclusion: {fileID: 0}
-    normalStrength: 0
+    glossiness: 0.489
+    color: {r: 0, g: 0.100868486, b: 0.3301887, a: 0}
+  - mapDiffuse: {fileID: 2800000, guid: 95a3155ad6cb76b4887b8e6767c08682, type: 3}
+    mapNormal: {fileID: 2800000, guid: b92a84f9249bdba4e9be637152dd84e8, type: 3}
+    mapOcclusion: {fileID: 2800000, guid: 86b34987862acd748ab78a89690c82ab, type: 3}
+    normalStrength: 1
     occlusionStrength: 0
-    scale: 0
+    scale: 100
     metallic: 0
     glossiness: 0
-    color: {r: 1, g: 0.97466964, b: 0.305, a: 0}
+    color: {r: 1, g: 1, b: 1, a: 0}
   - mapDiffuse: {fileID: 0}
     mapNormal: {fileID: 0}
     mapOcclusion: {fileID: 0}
@@ -103,15 +103,15 @@ MonoBehaviour:
     metallic: 0
     glossiness: 0
     color: {r: 1, g: 1, b: 1, a: 0}
-  - mapDiffuse: {fileID: 0}
-    mapNormal: {fileID: 0}
-    mapOcclusion: {fileID: 0}
-    normalStrength: 0
+  - mapDiffuse: {fileID: 2800000, guid: f23fc2bff43ece34284b500c3386693b, type: 3}
+    mapNormal: {fileID: 2800000, guid: 661fddb5bc5a1934899f7bc1b6397408, type: 3}
+    mapOcclusion: {fileID: 2800000, guid: 49146f62c33cf034ca8689b2cc9b1794, type: 3}
+    normalStrength: 1
     occlusionStrength: 0
-    scale: 0
+    scale: 100
     metallic: 0
     glossiness: 0
-    color: {r: 0.6792453, g: 0.29156286, b: 0.29156286, a: 0}
+    color: {r: 1, g: 1, b: 1, a: 0}
   - mapDiffuse: {fileID: 0}
     mapNormal: {fileID: 0}
     mapOcclusion: {fileID: 0}

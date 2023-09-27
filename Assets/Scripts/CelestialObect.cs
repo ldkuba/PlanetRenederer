@@ -8,6 +8,7 @@ using UnityEngine.UIElements;
 [ExecuteInEditMode()]
 public abstract class CelestialObject : MonoBehaviour
 {
+    public CelestialObjectProfiler profiler;
 
     // Components
     public ShapeSettings shapeSettings;
@@ -165,7 +166,7 @@ public abstract class CelestialObject : MonoBehaviour
         material.SetBuffer("biome_buffer", biome_buffer);
         material.SetBuffer("uv_buffer", uv_buffer);
 
-        set_surface_material_info();
+        //set_surface_material_info();
     }
 
     private void set_surface_material_info()

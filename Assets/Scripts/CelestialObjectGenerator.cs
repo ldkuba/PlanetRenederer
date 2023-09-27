@@ -80,6 +80,10 @@ public class CelestialObjectGenerator : MonoBehaviour {
         // if object is solid
         // planet script
         Planet planetS = surface.AddComponent<Planet>();
+
+        // Add profiler
+        planetS.profiler = surface.AddComponent<CelestialObjectProfiler>();
+        
         // resolution
         planetS.SphereType = sphereType;
         planetS.resolution = sphereResolution;
